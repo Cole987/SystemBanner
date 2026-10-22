@@ -41,6 +41,9 @@ WHAT'S NEW IN THE WINDOWS XP EDITION
 ![Alt text](Docs/Images/XP_Logon_Screenshot.png?raw=true)
 ![Alt text](Docs/Images/XP_Classic_Logon_Screenshot.png?raw=true)
 ![Alt text](Docs/Images/XP_Desktop_Screenshot.png?raw=true)
+![Alt text](Docs/Images/XP_Fullscreen_Screenshot.png?raw=true)
+
+*Fullscreen screenshot: Big Buck Bunny, (c) copyright 2008, Blender Foundation, www.bigbuckbunny.org, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).*
 
 ---------------------------------
 INSTALLATION (WINDOWS XP EDITION)
