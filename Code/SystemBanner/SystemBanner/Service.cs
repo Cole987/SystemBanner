@@ -8,11 +8,15 @@ namespace SystemBanner
     //Windows service (SystemBanner.exe /service, runs as LocalSystem) acting as a watchdog every 3 sec:
     // 1. keeps a SystemBanner.exe /winlogon child running on the secure Winlogon desktop (logon screen, locked workstation, ctrl+alt+del)
     // 2. restarts the user mode banner in every active user session if it is closed or killed
-    //Written for Windows XP (no session 0 isolation).
+    //Windows XP: the service shares session 0 with the console, one Winlogon banner is enough.
+    //Windows Vista and later: services are isolated in session 0 and every session has its own Winlogon desktop
+    //(and the logon screen gets a new session after each logoff), so one Winlogon banner is started per session.
     internal class BannerService : System.ServiceProcess.ServiceBase
     {
         private System.Threading.Timer watchdogTimer;
-        private static System.Diagnostics.Process winlogonBanner;
+        private static System.Diagnostics.Process winlogonBanner; //Windows XP
+        private static System.Collections.Generic.Dictionary<int, System.Diagnostics.Process> sessionWinlogonBanners = new System.Collections.Generic.Dictionary<int, System.Diagnostics.Process>(); //Windows Vista and later, by session id
+        private static readonly bool sessionIsolation = Environment.OSVersion.Version.Major >= 6; //Windows Vista and later
 
         public BannerService()
         {
@@ -35,6 +39,13 @@ namespace SystemBanner
                 if (winlogonBanner != null && !winlogonBanner.HasExited)
                 {
                     winlogonBanner.Kill();
+                }
+                foreach (System.Diagnostics.Process banner in sessionWinlogonBanners.Values)
+                {
+                    if (!banner.HasExited)
+                    {
+                        banner.Kill();
+                    }
                 }
             }
         }
@@ -156,6 +167,21 @@ namespace SystemBanner
         private static extern bool CreateProcess(string lpApplicationName, System.Text.StringBuilder lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, ref STARTUPINFO lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
         [DllImport("KERNEL32", SetLastError = true)]
         private static extern bool CloseHandle(IntPtr hObject);
+        //Windows Vista and later: a copy of the service's own SYSTEM token, moved to the target session
+        [DllImport("KERNEL32")]
+        private static extern IntPtr GetCurrentProcess();
+        [DllImport("ADVAPI32", SetLastError = true)]
+        private static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+        [DllImport("ADVAPI32", SetLastError = true)]
+        private static extern bool DuplicateTokenEx(IntPtr hExistingToken, uint dwDesiredAccess, IntPtr lpTokenAttributes, int ImpersonationLevel, int TokenType, out IntPtr phNewToken);
+        [DllImport("ADVAPI32", SetLastError = true)]
+        private static extern bool SetTokenInformation(IntPtr TokenHandle, int TokenInformationClass, ref int TokenInformation, int TokenInformationLength);
+        private const uint TOKEN_FOR_SESSION_COPY = 0x0001 | 0x0002 | 0x0008 | 0x0080 | 0x0100; // TOKEN_ASSIGN_PRIMARY | TOKEN_DUPLICATE | TOKEN_QUERY | TOKEN_ADJUST_DEFAULT | TOKEN_ADJUST_SESSIONID
+        private const int SecurityImpersonation = 2;
+        private const int TokenPrimary = 1;
+        private const int TokenSessionId = 12;
+        private const int WTSConnected = 1; //logon screen with nobody logged on
+        private const int WTSDisconnected = 4; //user switched away (Fast User Switching), its lock screen is still there
 
         private void WatchdogTick(object state)
         {
@@ -163,7 +189,14 @@ namespace SystemBanner
             {
                 lock (typeof(BannerService)) //ticks must not overlap
                 {
-                    CheckWinlogonBanner();
+                    if (sessionIsolation)
+                    {
+                        CheckSessionWinlogonBanners();
+                    }
+                    else
+                    {
+                        CheckWinlogonBanner();
+                    }
                     CheckUserBanners();
                 }
             }
@@ -198,6 +231,88 @@ namespace SystemBanner
             }
         }
 
+        private static void CheckSessionWinlogonBanners() //Windows Vista and later: one Winlogon banner in every user session (session 0 only runs services)
+        {
+            IntPtr sessions;
+            int count;
+            if (!WTSEnumerateSessions(IntPtr.Zero, 0, 1, out sessions, out count))
+            {
+                return;
+            }
+            try
+            {
+                int size = Marshal.SizeOf(typeof(WTS_SESSION_INFO));
+                for (int i = 0; i < count; i++)
+                {
+                    WTS_SESSION_INFO session = (WTS_SESSION_INFO)Marshal.PtrToStructure(new IntPtr(sessions.ToInt64() + (i * size)), typeof(WTS_SESSION_INFO));
+                    if (session.SessionID == 0 || (session.State != WTSActive && session.State != WTSConnected && session.State != WTSDisconnected))
+                    {
+                        continue;
+                    }
+                    System.Diagnostics.Process banner;
+                    if (sessionWinlogonBanners.TryGetValue(session.SessionID, out banner) && !banner.HasExited)
+                    {
+                        continue;
+                    }
+                    StartWinlogonBannerInSession(session.SessionID);
+                }
+            }
+            finally
+            {
+                WTSFreeMemory(sessions);
+            }
+        }
+
+        private static void StartWinlogonBannerInSession(int sessionId)
+        {
+            IntPtr processToken;
+            if (!OpenProcessToken(GetCurrentProcess(), TOKEN_FOR_SESSION_COPY, out processToken))
+            {
+                Program.LogEventString("SERVICE: CANNOT OPEN SERVICE TOKEN, ERROR " + Marshal.GetLastWin32Error());
+                return;
+            }
+            IntPtr systemToken = IntPtr.Zero;
+            try
+            {
+                if (!DuplicateTokenEx(processToken, MAXIMUM_ALLOWED, IntPtr.Zero, SecurityImpersonation, TokenPrimary, out systemToken))
+                {
+                    Program.LogEventString("SERVICE: CANNOT COPY SERVICE TOKEN, ERROR " + Marshal.GetLastWin32Error());
+                    return;
+                }
+                int targetSession = sessionId;
+                if (!SetTokenInformation(systemToken, TokenSessionId, ref targetSession, sizeof(int))) //needs SeTcbPrivilege, which LocalSystem has
+                {
+                    Program.LogEventString("SERVICE: CANNOT MOVE TOKEN TO SESSION " + sessionId + ", ERROR " + Marshal.GetLastWin32Error());
+                    return;
+                }
+                //started as LocalSystem directly on the Winlogon desktop of that session
+                STARTUPINFO si = new STARTUPINFO();
+                si.cb = Marshal.SizeOf(si);
+                si.lpDesktop = @"winsta0\winlogon";
+                PROCESS_INFORMATION pi;
+                string exe = Application.ExecutablePath;
+                if (CreateProcessAsUser(systemToken, exe, new System.Text.StringBuilder("\"" + exe + "\" /winlogon"), IntPtr.Zero, IntPtr.Zero, false, 0, IntPtr.Zero, System.IO.Path.GetDirectoryName(exe), ref si, out pi))
+                {
+                    sessionWinlogonBanners[sessionId] = System.Diagnostics.Process.GetProcessById(pi.dwProcessId);
+                    CloseHandle(pi.hProcess);
+                    CloseHandle(pi.hThread);
+                    Program.LogEventString("SERVICE: WINLOGON BANNER STARTED IN SESSION " + sessionId);
+                }
+                else
+                {
+                    Program.LogEventString("SERVICE: CANNOT START WINLOGON BANNER IN SESSION " + sessionId + ", ERROR " + Marshal.GetLastWin32Error());
+                }
+            }
+            finally
+            {
+                if (systemToken != IntPtr.Zero)
+                {
+                    CloseHandle(systemToken);
+                }
+                CloseHandle(processToken);
+            }
+        }
+
         private static void CheckUserBanners()
         {
             IntPtr sessions;
@@ -225,13 +340,28 @@ namespace SystemBanner
             }
         }
 
-        private static bool SessionRuns(int sessionId, string processName) //null processName = a user mode SystemBanner (not this service nor the Winlogon banner, which share session 0 with the first XP user)
+        private static bool SessionRuns(int sessionId, string processName) //null processName = a user mode SystemBanner (not this service nor a Winlogon banner, which share their session with the user)
         {
             System.Diagnostics.Process current = System.Diagnostics.Process.GetCurrentProcess();
-            int winlogonId = (winlogonBanner != null) ? winlogonBanner.Id : -1;
             foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName(processName ?? current.ProcessName))
             {
-                if (p.SessionId == sessionId && p.Id != current.Id && p.Id != winlogonId)
+                if (p.SessionId == sessionId && p.Id != current.Id && !IsWinlogonBanner(p.Id))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsWinlogonBanner(int processId)
+        {
+            if (winlogonBanner != null && winlogonBanner.Id == processId)
+            {
+                return true;
+            }
+            foreach (System.Diagnostics.Process banner in sessionWinlogonBanners.Values)
+            {
+                if (banner.Id == processId)
                 {
                     return true;
                 }
