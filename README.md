@@ -31,6 +31,11 @@ FEATURES
 ![Alt text](Docs/Images/XP_Desktop_Screenshot.png?raw=true)
 ![Alt text](Docs/Images/XP_Fullscreen_Screenshot.png?raw=true)
 
+Windows Vista logon screen, and UAC consent prompt (the banner is also shown on the secure desktop):
+
+![Alt text](Docs/Images/Vista_Logon_Screenshot.png?raw=true)
+![Alt text](Docs/Images/Vista_UAC_Screenshot.png?raw=true)
+
 *Fullscreen screenshot: Big Buck Bunny, (c) copyright 2008, Blender Foundation, www.bigbuckbunny.org, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).*
 
 -----------------
