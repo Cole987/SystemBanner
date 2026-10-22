@@ -152,17 +152,34 @@ namespace SystemBanner
         {
             //64 bit view only on 64 bit Windows, 32 bit XP must use its default view
             RegistryView view = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Default;
+            string source = "NO VIEW (SystemBanner key not found)";
             try
             {
-                ReadRegValues(view);
+                if (ReadRegValues(view))
+                {
+                    source = view + " VIEW";
+                }
+                else if (Environment.Is64BitOperatingSystem && ReadRegValues(RegistryView.Registry32)) //64 bit Windows: the settings may also sit in the 32 bit view (Wow6432Node)
+                {
+                    source = "Registry32 VIEW (Wow6432Node)";
+                }
             }
             catch (System.Security.SecurityException) //access denied on the policy key, show unconfigured instead of crashing
             {
                 bannerColor = simpleBannerColors[0];
                 bannerText = simpleBannerTexts[0];
+                source = "NO VIEW (access denied)";
+            }
+            //log where the settings come from, only when it changes (this runs every 5 sec)
+            string summary = "REGISTRY: SETTINGS FROM " + source + ", TEXT=" + bannerText + ", COLORS=" + string.Join(",", bannerColor) + ", TOPANDBOTTOM=" + bannerTopAndBottom;
+            if (summary != lastRegistrySummary)
+            {
+                lastRegistrySummary = summary;
+                LogEventString(summary);
             }
         }
-        private static void ReadRegValues(RegistryView view)
+        private static string lastRegistrySummary;
+        private static bool ReadRegValues(RegistryView view) //true when the SystemBanner key exists in that view
         {
             //grab registry key and see if it exists
             using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
@@ -231,13 +248,14 @@ namespace SystemBanner
                             bannerTopAndBottom = true;
                         }
                     }
-
+                    return true;
                 }
                 //if no reg values, set to not configured.
                 else
                 {
                     bannerColor = simpleBannerColors[0];
                     bannerText = simpleBannerTexts[0];
+                    return false;
                 }
             }
         }
