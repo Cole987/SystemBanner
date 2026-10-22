@@ -23,6 +23,7 @@ namespace SystemBanner
         public static int displayPixelHash;
         public static int[] oldBannerColor;
         public static string oldBannerText;
+        public static bool oldBannerTopAndBottom;
         //defines stock colors for basic us gov classification based on gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
         public static int[] unconfiguredBannerColor = new int[6] { 255, 255, 255, 0, 0, 0 };
         public static int[] unclassifiedBannerColor = new int[6] { 0, 122, 51, 255, 255, 255 };
@@ -101,6 +102,7 @@ namespace SystemBanner
             //store initial color and text
             oldBannerColor = bannerColor;
             oldBannerText = bannerText;
+            oldBannerTopAndBottom = bannerTopAndBottom;
             //for each screen that exists, build me a new banner on that screen with color and text values defined.
             BuildBanners();
             //set a timer for refreshing banners if needed
@@ -131,6 +133,10 @@ namespace SystemBanner
                     var key = hklm.OpenSubKey(@"SOFTWARE\Policies\SystemBanner", RegistryKeyPermissionCheck.ReadSubTree);
                     //start from a fresh array, writing into bannerColor would overwrite the stock color arrays it points to on a second read
                     bannerColor = (int[])unconfiguredBannerColor.Clone();
+                    //values removed since the last read must go back to their defaults
+                    bannerText = unconfiguredBannerText;
+                    bannerTopAndBottom = false;
+                    debug = false;
                     //check DWORD registry values for custom color if they exist, and if so, grab them
                     for (int i = 0; i < bannerColor.Length; i++)
                     {
@@ -235,7 +241,8 @@ namespace SystemBanner
         }
         private static void RefreshBannerTick(object sender, EventArgs e)
         {
-            //GetRegValues();
+            //pick up classification changes (group policy or manual registry edits) without a restart
+            GetRegValues();
             if (secureDesktop && Application.OpenForms.Count == 0) //the Winlogon banners were closed anyway (logoff), bring them back
             {
                 BuildBanners();
@@ -269,15 +276,14 @@ namespace SystemBanner
                 RebuildBanners();
                 displayPixelHash = currentDisplayPixelHash;
             }
-            if (oldBannerColor != bannerColor)
+            //compare contents, GetRegValues hands out a new color array on every read
+            if (!System.Linq.Enumerable.SequenceEqual(oldBannerColor, bannerColor) || oldBannerText != bannerText || oldBannerTopAndBottom != bannerTopAndBottom)
             {
+                LogEventString("CLASSIFICATION CHANGED TO " + bannerText + ", REBUILDING BANNERS");
                 RebuildBanners();
                 oldBannerColor = bannerColor;
-            }
-            if (oldBannerText != bannerText)
-            {
-                RebuildBanners();
                 oldBannerText = bannerText;
+                oldBannerTopAndBottom = bannerTopAndBottom;
             }
         }
         public static void LogEventString(string msg)
