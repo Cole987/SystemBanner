@@ -194,11 +194,12 @@ Tested on real Macs and virtual machines. On each of them: desktop banners, logi
 |---|---|---|
 | Mac OS X 10.6.8 Snow Leopard | `SnowLeopard-ElCapitan` | Mac mini 2007 |
 | OS X 10.9.5 Mavericks | `SnowLeopard-ElCapitan` | iMac 2011 |
-| OS X 10.11.6 El Capitan | `SnowLeopard-ElCapitan` | Virtual machine |
+| OS X 10.11.6 El Capitan | `SnowLeopard-ElCapitan` | iMac 2011, and a virtual machine |
 | macOS 10.12 Sierra | `macOS` (with its embedded Swift runtime) | Virtual machine |
+| macOS 15.1 Sequoia | `macOS-ARM` | Apple Silicon virtual machine |
 | macOS 26 | `macOS-ARM` | MacBook Pro M4 Pro |
 
-macOS on Apple Silicon, top and bottom banners on the desktop:
+macOS 15.1 Sequoia on Apple Silicon, top and bottom banners on the desktop:
 
 ![Alt text](Docs/Images/MacOS_ARM_Desktop.png?raw=true)
 
