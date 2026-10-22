@@ -155,7 +155,7 @@ KNOWN LIMITATIONS
 - Windows Vista: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
-- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), including three screens, a standard user account, Fast User Switching on Vista and removal. The full test series (logon screen, lock, logoff, UAC prompt, live classification changes, fullscreen) was run on each of them. Windows 8 and later have not been tested.
+- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), including three screens, a standard user account, Fast User Switching on Vista and removal. The full test series (logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, fullscreen) was run on each of them. Windows 8 and later have not been tested.
 
 --------
 BUILDING
