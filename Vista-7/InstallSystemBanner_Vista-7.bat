@@ -1,5 +1,5 @@
 @ECHO OFF & CLS & ECHO.
-REM SystemBanner installer for Windows Vista SP2 (x86 and x64). Requires .NET Framework 4.0 or later 4.x.
+REM SystemBanner installer for Windows Vista SP2 and Windows 7 (x86 and x64). Requires .NET Framework 4.0 or later 4.x.
 REM Copyright (c) 2026, Cole. MIT License Applies.
 NET FILE 1>NUL 2>NUL
 IF ERRORLEVEL 1 (ECHO [ERROR] Right click this file and select "Run as administrator". & PAUSE & EXIT /B 1)

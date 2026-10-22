@@ -45,7 +45,7 @@ REPOSITORY LAYOUT
 | Folder | Content |
 |---|---|
 | `XP/` | Everything needed on a Windows XP computer: binaries, install and removal scripts, Group Policy template (ADM), debug scripts. |
-| `Vista/` | Everything needed on a Windows Vista or Windows 7 computer: the same binaries, install and removal scripts, Group Policy templates (ADMX/ADML), debug scripts. |
+| `Vista-7/` | Everything needed on a Windows Vista or Windows 7 computer: the same binaries, install and removal scripts, Group Policy templates (ADMX/ADML), debug scripts. |
 | `Code/` | Source code (Visual Studio solution). |
 | `Docs/` | Screenshots used in this README. |
 | `Original/` | The original SystemBanner 1.1 files (Windows 10/11 MSI, scripts, ADMX templates), kept for reference. They do not include the features of this fork. |
@@ -56,10 +56,10 @@ INSTALLATION
 
 ### Windows Vista SP2 and Windows 7 (32 or 64 bit)
 
-Requirements: Windows Vista SP2 or Windows 7, .NET Framework 4.0 (or a later 4.x version), an administrator account. Windows 7 uses the files of the `Vista` folder.
+Requirements: Windows Vista SP2 or Windows 7, .NET Framework 4.0 (or a later 4.x version), an administrator account. Windows 7 uses the files of the `Vista-7` folder.
 
-1. Copy the whole `Vista` folder to the computer.
-2. Right click `Vista\InstallSystemBanner_Vista.bat` and select "Run as administrator".
+1. Copy the whole `Vista-7` folder to the computer.
+2. Right click `Vista-7\InstallSystemBanner_Vista-7.bat` and select "Run as administrator".
 3. The installer ends with `[OK] The SystemBanner service is running`. The service starts the banner within a few seconds. Lock the session with Win+L to see the logon screen banner.
 
 It works like the Windows XP installer below, with these differences: it copies the ADMX/ADML templates to `C:\Windows\PolicyDefinitions`, it does not mark the service as interactive (useless since Vista isolates services in session 0), and it lets the service start the banner, so the banner runs with the user's normal rights and not as administrator.
@@ -85,7 +85,7 @@ The installer:
 REMOVAL
 -------
 
-Run `XP\RemoveSystemBanner_XP.bat` as an administrator (on Vista, right click `Vista\RemoveSystemBanner_Vista.bat` > Run as administrator). It stops and deletes the service, kills all running instances, restarts Explorer to release the screen space reserved by the banners, and deletes the files, the Run key and the Group Policy templates.
+Run `XP\RemoveSystemBanner_XP.bat` as an administrator (on Vista and 7, right click `Vista-7\RemoveSystemBanner_Vista-7.bat` > Run as administrator). It stops and deletes the service, kills all running instances, restarts Explorer to release the screen space reserved by the banners, and deletes the files, the Run key and the Group Policy templates.
 
 --------------
 ADMINISTRATION
@@ -102,13 +102,13 @@ SystemBanner reads its configuration from `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\
 | `TopAndBottom` | DWORD | 1 shows a banner at the top and at the bottom of each screen. |
 | `Debug` | DWORD | 1 turns debug logging on. |
 
-To use Group Policy on Windows Vista, open `gpedit.msc`: the installer already copied the ADMX/ADML templates, and the settings appear under Computer Configuration > Administrative Templates > SystemBanner.
+To use Group Policy on Windows Vista and 7, open `gpedit.msc`: the installer already copied the ADMX/ADML templates, and the settings appear under Computer Configuration > Administrative Templates > SystemBanner.
 
 To use Group Policy on Windows XP, open `gpedit.msc`, right click Computer Configuration > Administrative Templates > Add/Remove Templates > Add, and select `C:\WINDOWS\inf\SystemBanner.adm`. The settings appear under Computer Configuration > Administrative Templates > SystemBanner.
 
 Every change applies within about one second.
 
-Active Directory Administrators - copy `Vista\Group Policy\SystemBanner.admx` and its `en-US\SystemBanner.adml` to the PolicyDefinitions folder (or Central Store) of your domain, or add `XP\SystemBanner.adm` to a Group Policy Object, to configure SystemBanner across your Domain or Forest. Run `gpupdate /force` on a computer to apply a change right away.
+Active Directory Administrators - copy `Vista-7\Group Policy\SystemBanner.admx` and its `en-US\SystemBanner.adml` to the PolicyDefinitions folder (or Central Store) of your domain, or add `XP\SystemBanner.adm` to a Group Policy Object, to configure SystemBanner across your Domain or Forest. Run `gpupdate /force` on a computer to apply a change right away.
 
 ------------
 HOW IT WORKS
@@ -120,7 +120,7 @@ SystemBanner runs one executable in three modes:
 - `SystemBanner.exe /service`: the `SystemBanner` Windows service, running as LocalSystem. Every 3 seconds it checks that the logon screen banner runs, and that every active user session with Explorer running has its banner, and restarts whatever is missing.
 - `SystemBanner.exe /winlogon`: the logon screen banner. The service starts it as LocalSystem directly on the `WinSta0\Winlogon` desktop. It is a plain opaque window, because Windows XP does not draw layered windows created on that desktop while it is hidden. It repaints itself when the Winlogon desktop comes on screen and survives logoffs.
 
-On Windows XP the service shares session 0 with the console, so one logon screen banner is enough. On Windows Vista the service is isolated in session 0 and every session has its own Winlogon desktop, and the logon screen gets a new session after each logoff. The service therefore starts one logon screen banner per session, with a copy of its own LocalSystem token moved to that session.
+On Windows XP the service shares session 0 with the console, so one logon screen banner is enough. On Windows Vista and 7 the service is isolated in session 0 and every session has its own Winlogon desktop, and the logon screen gets a new session after each logoff. The service therefore starts one logon screen banner per session, with a copy of its own LocalSystem token moved to that session.
 
 All modes watch `HKLM\SOFTWARE\Policies` for changes and rebuild their banners when the configuration changes. A 5 second timer also checks the configuration and the display layout.
 
@@ -128,14 +128,14 @@ All modes watch `HKLM\SOFTWARE\Policies` for changes and rebuild their banners w
 TROUBLESHOOTING
 ---------------
 
-Use the scripts in `XP\Debug` or `Vista\Debug`, as an administrator (on Vista, right click > Run as administrator):
+Use the scripts in `XP\Debug` or `Vista-7\Debug`, as an administrator (on Vista and 7, right click > Run as administrator):
 
-1. Run `EnableDebug_XP.bat` or `EnableDebug_Vista.bat`. It turns debug logging on and restarts the service.
+1. Run `EnableDebug_XP.bat` or `EnableDebug_Vista-7.bat`. It turns debug logging on and restarts the service.
 2. Reproduce the problem, then press a key in the script window.
-3. The script gathers every log in a `SystemBanner_logs` folder on the Desktop: crash and debug logs, service state, running SystemBanner processes, current settings and SystemBanner events (and the session list on Vista).
-4. Run `DisableDebug_XP.bat` or `DisableDebug_Vista.bat` when you are done.
+3. The script gathers every log in a `SystemBanner_logs` folder on the Desktop: crash and debug logs, service state, running SystemBanner processes, current settings and SystemBanner events (and the session list on Vista and 7).
+4. Run `DisableDebug_XP.bat` or `DisableDebug_Vista-7.bat` when you are done.
 
-If the banner does not show the configured classification, run `"C:\Program Files\SystemBanner\SystemBanner.exe" /diag` from a normal (not elevated) command prompt. It writes `SystemBanner_diag.txt` on the Desktop: Windows and .NET versions, process bitness, account, the SystemBanner values seen in each registry view (or the exact error), and what SystemBanner ends up reading. The Vista debug script runs it too.
+If the banner does not show the configured classification, run `"C:\Program Files\SystemBanner\SystemBanner.exe" /diag` from a normal (not elevated) command prompt. It writes `SystemBanner_diag.txt` on the Desktop: Windows and .NET versions, process bitness, account, the SystemBanner values seen in each registry view (or the exact error), and what SystemBanner ends up reading. The Vista-7 debug script runs it too.
 
 Log locations, if you need them by hand:
 
@@ -150,9 +150,9 @@ KNOWN LIMITATIONS
 - Apps in exclusive DirectX fullscreen mode (mostly games) cannot be resized or covered by any window, including SystemBanner.
 - An app that forces itself back to full screen after being fitted is not resized again, to avoid a resize loop. The top banner then covers the top of it.
 - While fitted, a fullscreen app is kept on top of the taskbar. If you switch to another window without leaving fullscreen, the app is put back to a normal window but keeps its fitted size.
-- Windows XP: with Fast User Switching, the logon screen banner is only shown on the console session. Domain joined computers, where Fast User Switching is off, are not affected. Windows Vista gets one logon screen banner per session.
-- Windows Vista: the banner runs with the user's normal rights, so it cannot resize a fullscreen app running as administrator. The top banner then covers the top of it.
-- Windows Vista: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
+- Windows XP: with Fast User Switching, the logon screen banner is only shown on the console session. Domain joined computers, where Fast User Switching is off, are not affected. Windows Vista and 7 get one logon screen banner per session.
+- Windows Vista and 7: the banner runs with the user's normal rights, so it cannot resize a fullscreen app running as administrator. The top banner then covers the top of it.
+- Windows Vista and 7: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
 - Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), including three screens, a standard user account, Fast User Switching on Vista and removal. The full test series (logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, fullscreen) was run on each of them. Windows 8 and later have not been tested.
@@ -161,12 +161,12 @@ KNOWN LIMITATIONS
 BUILDING
 --------
 
-The project in `Code/SystemBanner` targets .NET Framework 4.0, x86. It builds with Visual Studio 2019 and the .NET Framework 4.0 targeting pack. Visual Studio 2022 no longer ships that targeting pack: add the `Microsoft.NETFramework.ReferenceAssemblies.net40` NuGet package to build it. The binaries in `XP/Binaries` and `Vista/Binaries` are the same build: Release, x86, with symbols (`SystemBanner.pdb`).
+The project in `Code/SystemBanner` targets .NET Framework 4.0, x86. It builds with Visual Studio 2019 and the .NET Framework 4.0 targeting pack. Visual Studio 2022 no longer ships that targeting pack: add the `Microsoft.NETFramework.ReferenceAssemblies.net40` NuGet package to build it. The binaries in `XP/Binaries` and `Vista-7/Binaries` are the same build: Release, x86, with symbols (`SystemBanner.pdb`).
 
 -------
 CREDITS
 -------
 
-SystemBanner was created by Aaron Wawrzyniak ([awawrzyniak10](https://github.com/awawrzyniak10/SystemBanner)). The Windows XP and Vista fork (XP and Vista ports, logon screen banner, watchdog service, live updates, fullscreen handling) is by Cole. Stock classification colors are based on the GSA form color information collected by Frank Caviggia (https://github.com/fcaviggia/classification-banner).
+SystemBanner was created by Aaron Wawrzyniak ([awawrzyniak10](https://github.com/awawrzyniak10/SystemBanner)). The Windows XP, Vista and 7 fork (XP, Vista and 7 ports, logon screen banner, watchdog service, live updates, fullscreen handling) is by Cole. Stock classification colors are based on the GSA form color information collected by Frank Caviggia (https://github.com/fcaviggia/classification-banner).
 
 SystemBanner is released under the MIT License, see `LICENSE`.

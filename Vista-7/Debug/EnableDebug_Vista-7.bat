@@ -1,5 +1,5 @@
 @ECHO OFF & CLS & ECHO.
-REM SystemBanner debug helper for Windows Vista: turns debug logging on, then gathers every log on the Desktop.
+REM SystemBanner debug helper for Windows Vista and 7: turns debug logging on, then gathers every log on the Desktop.
 REM Copyright (c) 2026, Cole. MIT License Applies.
 NET FILE 1>NUL 2>NUL
 IF ERRORLEVEL 1 (ECHO [ERROR] Right click this file and select "Run as administrator". & PAUSE & EXIT /B 1)
@@ -38,6 +38,6 @@ COPY /Y "%USERPROFILE%\Desktop\SystemBanner_diag.txt" "%OUT%\" 1>NUL 2>NUL
 
 ECHO.
 ECHO [OK] Logs gathered in "%OUT%". Send this folder to whoever is helping you.
-ECHO Run DisableDebug_Vista.bat when you are done.
+ECHO Run DisableDebug_Vista-7.bat when you are done.
 START "" "%OUT%"
 PAUSE

@@ -1,5 +1,5 @@
 @ECHO OFF & CLS & ECHO.
-REM SystemBanner debug helper for Windows Vista: turns debug logging off.
+REM SystemBanner debug helper for Windows Vista and 7: turns debug logging off.
 REM Copyright (c) 2026, Cole. MIT License Applies.
 NET FILE 1>NUL 2>NUL
 IF ERRORLEVEL 1 (ECHO [ERROR] Right click this file and select "Run as administrator". & PAUSE & EXIT /B 1)
