@@ -45,8 +45,16 @@ namespace SystemBanner
         private static readonly System.IntPtr HWND_TOPMOST = new System.IntPtr(-1);
         private const uint SWP_NOSIZE_NOMOVE_NOACTIVATE = 0x0001 | 0x0002 | 0x0010; // SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
         private const uint SWP_SHOWWINDOW = 0x0040;
+        private const uint SWP_NOZORDER_NOACTIVATE = 0x0004 | 0x0010; // SWP_NOZORDER | SWP_NOACTIVATE
         private bool winlogonWasShown; //was the Winlogon desktop on screen at the last refresh
         private int topmostTicks; //refreshes since the last topmost check
+
+        //fullscreen apps are shrunk between the banners so no part of a video is hidden
+        [System.Runtime.InteropServices.DllImport("USER32", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int GetClassName(System.IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+        private static System.IntPtr fittedWindow; //fullscreen window fitted between the banners, only once, so an app going back to fullscreen is not fought over
+        private static RECT fittedRect; //the size it was given
+        private bool atScreenBottom; //bottom banner moved all the way down (over the taskbar) for a fullscreen app
         //make labels
         private System.Windows.Forms.Label classificationLabel;
         private System.Windows.Forms.Label leftLabel;
@@ -142,6 +150,14 @@ namespace SystemBanner
 
                 GetWindowRect(new System.Runtime.InteropServices.HandleRef(null, hWnd), ref rect);
 
+                //the desktop itself (Progman/WorkerW) is screen sized too, it is not a fullscreen app
+                System.Text.StringBuilder className = new System.Text.StringBuilder(64);
+                GetClassName(hWnd, className, className.Capacity);
+                if (className.ToString() == "Progman" || className.ToString() == "WorkerW")
+                {
+                    return false;
+                }
+
                 if ((bannerScreen) < System.Windows.Forms.Screen.AllScreens.Length)
                 {
                     if (System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Width == (rect.right - rect.left) && System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Height == (rect.bottom - rect.top))
@@ -166,6 +182,27 @@ namespace SystemBanner
                     return false;
                 }
 
+            }
+
+            bool IsForegroundFitted() //the foreground window is the fullscreen app we fitted between the banners, still at that size
+            {
+                RECT rect = new RECT();
+                System.IntPtr hWnd = GetForegroundWindow();
+                GetWindowRect(new System.Runtime.InteropServices.HandleRef(null, hWnd), ref rect);
+                return hWnd != System.IntPtr.Zero && hWnd == fittedWindow && rect.left == fittedRect.left && rect.top == fittedRect.top && rect.right == fittedRect.right && rect.bottom == fittedRect.bottom;
+            }
+            void FitForegroundBetweenBanners() //shrink the fullscreen app to the screen minus the top banner (and the bottom one)
+            {
+                System.Drawing.Rectangle screen = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds;
+                RECT fit = new RECT();
+                fit.left = screen.Left;
+                fit.right = screen.Right;
+                fit.top = screen.Top + bannerHeight;
+                fit.bottom = screen.Bottom - (Program.bannerTopAndBottom ? bannerHeight : 0);
+                fittedWindow = GetForegroundWindow();
+                fittedRect = fit;
+                SetWindowPos(fittedWindow, System.IntPtr.Zero, fit.left, fit.top, fit.right - fit.left, fit.bottom - fit.top, SWP_NOZORDER_NOACTIVATE);
+                Program.LogEventString("FULLSCREEN APP " + fittedWindow + " FITTED TO " + fit.left + "L," + fit.top + "T," + fit.right + "R," + fit.bottom + "B");
             }
 
             void RefreshBannerTimer() //run every 0.05 seconds to keep the banner on top of everything
@@ -194,10 +231,31 @@ namespace SystemBanner
                     }
                     winlogonWasShown = winlogonShown;
                 }
-                else if (IsForegroundFullScreen() || ++topmostTicks >= 20) //user desktop: take the top spot back right away from a fullscreen app (video, game, slideshow), otherwise check once per second
+                else
                 {
-                    SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
-                    topmostTicks = 0;
+                    bool fullscreen = IsForegroundFullScreen();
+                    if (!bannerPosition) //the top banner (there is always one per screen) manages the fitting
+                    {
+                        if (fullscreen && GetForegroundWindow() != fittedWindow)
+                        {
+                            FitForegroundBetweenBanners();
+                        }
+                        else if (!fullscreen && fittedWindow != System.IntPtr.Zero && !IsForegroundFitted())
+                        {
+                            fittedWindow = System.IntPtr.Zero; //fullscreen is over, fit again next time
+                        }
+                    }
+                    fullscreen = fullscreen || IsForegroundFitted();
+                    if (bannerPosition && fullscreen != atScreenBottom) //bottom banner: all the way down during fullscreen, back above the taskbar afterwards
+                    {
+                        this.Top = fullscreen ? System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - bannerHeight : System.Windows.Forms.Screen.AllScreens[bannerScreen].WorkingArea.Bottom - bannerHeight;
+                        atScreenBottom = fullscreen;
+                    }
+                    if (fullscreen || ++topmostTicks >= 20) //take the top spot back right away from a fullscreen app (video, game, slideshow), otherwise check once per second
+                    {
+                        SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
+                        topmostTicks = 0;
+                    }
                 }
             }
 
