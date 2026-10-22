@@ -55,6 +55,11 @@ namespace SystemBanner
         private static System.IntPtr fittedWindow; //fullscreen window fitted between the banners, only once, so an app going back to fullscreen is not fought over
         private static RECT fittedRect; //the size it was given
         private bool isBottomBanner; //fullscreen apps are fitted above the bottom banners
+        private bool atScreenBottom; //bottom banner moved to the very bottom of the screen (over the taskbar) for a fullscreen app
+        private int normalTop; //its exact place outside fullscreen, restored as is (WorkingArea already excludes the banner's own AppBar, so it cannot be recomputed from it)
+        private static bool fittedMadeTopmost; //the fitted app was put above the taskbar by us, undo it when fullscreen ends
+        private static readonly System.IntPtr HWND_NOTOPMOST = new System.IntPtr(-2);
+        private const uint SWP_NOACTIVATE = 0x0010;
 
         //the bottom banner sits right below the taskbar in the z-order, so the Start menu and tray notifications that open over it stay visible
         [System.Runtime.InteropServices.DllImport("USER32", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
@@ -221,17 +226,19 @@ namespace SystemBanner
                 fit.right = screen.Right;
                 fit.top = screen.Top + bannerHeight;
                 fit.bottom = screen.Bottom;
-                foreach (Form form in Application.OpenForms) //stop right above the bottom banner of this screen, where it really is
+                foreach (Form form in Application.OpenForms) //stop right above the bottom banner of this screen, which goes to the very bottom during fullscreen
                 {
                     Banner banner = form as Banner;
-                    if (banner != null && banner.isBottomBanner && screen.Contains(banner.Left, banner.Top) && banner.Top < fit.bottom)
+                    if (banner != null && banner.isBottomBanner && screen.Contains(banner.Left, banner.Top))
                     {
-                        fit.bottom = banner.Top;
+                        fit.bottom = System.Math.Min(fit.bottom, screen.Bottom - banner.Height);
                     }
                 }
                 fittedWindow = GetForegroundWindow();
                 fittedRect = fit;
-                SetWindowPos(fittedWindow, System.IntPtr.Zero, fit.left, fit.top, fit.right - fit.left, fit.bottom - fit.top, SWP_NOZORDER_NOACTIVATE);
+                //once resized the app is no longer "fullscreen" for the shell, which shows the taskbar again: put the app above it until fullscreen ends
+                fittedMadeTopmost = (GetWindowLong(fittedWindow, GWL_EXSTYLE) & WS_EX_TOPMOST) == 0;
+                SetWindowPos(fittedWindow, HWND_TOPMOST, fit.left, fit.top, fit.right - fit.left, fit.bottom - fit.top, SWP_NOACTIVATE);
                 Program.LogEventString("FULLSCREEN APP " + fittedWindow + " FITTED TO " + fit.left + "L," + fit.top + "T," + fit.right + "R," + fit.bottom + "B");
             }
 
@@ -272,10 +279,27 @@ namespace SystemBanner
                         }
                         else if (!fullscreen && fittedWindow != System.IntPtr.Zero && !IsForegroundFitted())
                         {
+                            if (fittedMadeTopmost)
+                            {
+                                SetWindowPos(fittedWindow, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE); //back to a normal window
+                            }
                             fittedWindow = System.IntPtr.Zero; //fullscreen is over, fit again next time
                         }
                     }
                     fullscreen = fullscreen || IsForegroundFitted();
+                    if (isBottomBanner && fullscreen != atScreenBottom) //bottom banner: very bottom of the screen during fullscreen, exactly back in place afterwards
+                    {
+                        if (fullscreen)
+                        {
+                            normalTop = this.Top;
+                            this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - this.Height;
+                        }
+                        else
+                        {
+                            this.Top = normalTop;
+                        }
+                        atScreenBottom = fullscreen;
+                    }
                     if (fullscreen || ++topmostTicks >= 20) //take the top spot back right away from a fullscreen app (video, game, slideshow), otherwise check once per second
                     {
                         SetWindowPos(this.Handle, TopmostSlot(fullscreen), 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);

@@ -34,9 +34,12 @@ WHAT'S NEW IN THE WINDOWS XP EDITION
 - **Banner on the logon screen.** The banner is also shown on the secure Winlogon desktop: the logon screen (classic logon dialog and Welcome screen), the locked workstation and the Ctrl+Alt+Del screen, including right after a logoff.
 - **Persistence.** A Windows service restarts the banner within about 3 seconds if a user closes or kills it. Alt+F4 does not close the banner, and Windows restarts the service if it crashes.
 - **Always visible.** The banner is fully opaque and always on top. The transparency and the fading on mouse over and over fullscreen apps were removed. The bottom banner sits right below the taskbar in the z-order, so the Start menu and tray notifications that open over it stay readable.
-- **Fullscreen videos stay fully visible.** When an app goes fullscreen (tested with VLC and Firefox), SystemBanner resizes it once to fit between the top and bottom banners, so the banner never hides part of the video.
+- **Fullscreen videos stay fully visible.** When an app goes fullscreen (tested with VLC and Firefox), the bottom banner moves to the very bottom of the screen and SystemBanner resizes the app once to fit between the top and bottom banners, over the taskbar. The banners never hide part of the video, and everything goes back in place when fullscreen ends.
 - **Live configuration updates.** Classification, text, colors and banner position changes apply in about one second, on the user banner and on the logon screen banner, with no restart.
 - **Troubleshooting.** Crash logs with full stack traces, and two scripts that turn debug logging on and off and gather every log in one folder.
+
+![Alt text](Docs/Images/XP_Logon_Screenshot.png?raw=true)
+![Alt text](Docs/Images/XP_Classic_Logon_Screenshot.png?raw=true)
 
 ---------------------------------
 INSTALLATION (WINDOWS XP EDITION)
@@ -129,6 +132,7 @@ KNOWN LIMITATIONS
 
 - Apps in exclusive DirectX fullscreen mode (mostly games) cannot be resized or covered by any window, including SystemBanner.
 - An app that forces itself back to full screen after being fitted is not resized again, to avoid a resize loop. The top banner then covers the top of it.
+- While fitted, a fullscreen app is kept on top of the taskbar. If you switch to another window without leaving fullscreen, the app is put back to a normal window but keeps its fitted size.
 - With Fast User Switching, the logon screen banner is only shown on the console session. Domain joined computers, where Fast User Switching is off, are not affected.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
