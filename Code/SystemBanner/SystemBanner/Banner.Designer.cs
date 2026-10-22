@@ -54,7 +54,7 @@ namespace SystemBanner
         private static extern int GetClassName(System.IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
         private static System.IntPtr fittedWindow; //fullscreen window fitted between the banners, only once, so an app going back to fullscreen is not fought over
         private static RECT fittedRect; //the size it was given
-        private bool atScreenBottom; //bottom banner moved all the way down (over the taskbar) for a fullscreen app
+        private bool isBottomBanner; //fullscreen apps are fitted above the bottom banners
         //make labels
         private System.Windows.Forms.Label classificationLabel;
         private System.Windows.Forms.Label leftLabel;
@@ -87,7 +87,8 @@ namespace SystemBanner
             this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Y; //appear at the top of the screen
             if (bannerPosition == Program.bannerBottom)
             {
-                this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].WorkingArea.Bottom - bannerHeight; //appear at the bottom of the screen
+                this.isBottomBanner = true;
+                this.Top =System.Windows.Forms.Screen.AllScreens[bannerScreen].WorkingArea.Bottom - bannerHeight; //appear at the bottom of the screen
                 if (Program.secureDesktop)
                 {
                     this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - bannerHeight; //no taskbar on the Winlogon desktop
@@ -198,7 +199,15 @@ namespace SystemBanner
                 fit.left = screen.Left;
                 fit.right = screen.Right;
                 fit.top = screen.Top + bannerHeight;
-                fit.bottom = screen.Bottom - (Program.bannerTopAndBottom ? bannerHeight : 0);
+                fit.bottom = screen.Bottom;
+                foreach (Form form in Application.OpenForms) //stop right above the bottom banner of this screen, where it really is
+                {
+                    Banner banner = form as Banner;
+                    if (banner != null && banner.isBottomBanner && screen.Contains(banner.Left, banner.Top) && banner.Top < fit.bottom)
+                    {
+                        fit.bottom = banner.Top;
+                    }
+                }
                 fittedWindow = GetForegroundWindow();
                 fittedRect = fit;
                 SetWindowPos(fittedWindow, System.IntPtr.Zero, fit.left, fit.top, fit.right - fit.left, fit.bottom - fit.top, SWP_NOZORDER_NOACTIVATE);
@@ -246,11 +255,6 @@ namespace SystemBanner
                         }
                     }
                     fullscreen = fullscreen || IsForegroundFitted();
-                    if (bannerPosition && fullscreen != atScreenBottom) //bottom banner: all the way down during fullscreen, back above the taskbar afterwards
-                    {
-                        this.Top = fullscreen ? System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - bannerHeight : System.Windows.Forms.Screen.AllScreens[bannerScreen].WorkingArea.Bottom - bannerHeight;
-                        atScreenBottom = fullscreen;
-                    }
                     if (fullscreen || ++topmostTicks >= 20) //take the top spot back right away from a fullscreen app (video, game, slideshow), otherwise check once per second
                     {
                         SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
