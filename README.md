@@ -1,5 +1,29 @@
 # SystemBanner
 
+--------
+CONTENTS
+--------
+
+- [About](#about): what SystemBanner is, and every supported system
+- [Windows features](#windows-features)
+- [macOS features](#macos-features)
+- [Repository layout](#repository-layout)
+- **Windows 2000, XP, Vista and 7**
+  - [Installation](#installation): [Vista and 7](#windows-vista-sp2-and-windows-7-32-or-64-bit), [2000](#windows-2000-professional-sp4), [XP](#windows-xp-sp3)
+  - [Removal](#removal)
+  - [Administration](#administration)
+  - [How it works](#how-it-works)
+  - [Troubleshooting](#troubleshooting)
+  - [Known limitations](#known-limitations)
+  - [Building](#building-1)
+- **Mac OS X and macOS** ([overview and tested Macs](#mac-os-x-and-macos))
+  - [Installation](#installation-1)
+  - [Administration](#administration-1)
+  - [Differences with the Windows version](#differences-with-the-windows-version)
+  - [Building](#building)
+- [Roadmap](#roadmap)
+- [Credits](#credits)
+
 -----
 ABOUT
 -----
