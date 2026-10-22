@@ -12,7 +12,7 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0), and to Windows 2000 Professional SP4 (a separate .NET Framework 2.0 executable built from the same source). Windows 2000 support is being tested.
+This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0), and to Windows 2000 Professional SP4 (a separate .NET Framework 2.0 executable built from the same source).
 
 --------
 FEATURES
@@ -167,7 +167,7 @@ KNOWN LIMITATIONS
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
 - Windows 2000: there is no Win+L, lock the computer with Ctrl+Alt+Del > Lock Computer. The Windows 2000 debug script gathers the event log entries through `/diag` and Event Viewer only, as Windows 2000 has no command line event log tool.
-- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), including three screens, a standard user account, Fast User Switching on Vista and removal. The full test series (logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, fullscreen) was run on each of them. Windows 2000 Professional SP4 support is being tested. Windows 8 and later have not been tested.
+- Tested on Windows 2000 Professional SP4, Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), with the full test series on each of them: installation, logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, restart after a kill, fullscreen and removal. Three screens, a standard user account and Fast User Switching were tested on Windows Vista. Windows 8 and later have not been tested.
 
 --------
 BUILDING
