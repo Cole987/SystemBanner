@@ -1,4 +1,4 @@
-//Copyright (c) 2026, Aaron Wawrzyniak. MIT License Applies.
+//Copyright (c) 2026, Cole. MIT License Applies.
 using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;

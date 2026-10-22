@@ -1,5 +1,6 @@
 @ECHO OFF & CLS & ECHO.
 REM SystemBanner installer for Windows XP SP3 (x86). Requires .NET Framework 4.0.
+REM Copyright (c) 2026, Cole. MIT License Applies.
 NET FILE 1>NUL 2>NUL
 IF ERRORLEVEL 1 (ECHO [ERROR] You must run this installer from an administrator account. & PAUSE & EXIT /B 1)
 REG QUERY "HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" /V Install 1>NUL 2>NUL

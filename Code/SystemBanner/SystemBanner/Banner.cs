@@ -1,4 +1,5 @@
 ﻿//Copyright (c) 2023, Aaron Wawrzyniak. MIT License Applies.
+//Windows XP port, logon screen banner, watchdog and live updates: Copyright (c) 2026, Cole. MIT License Applies.
 using System;
 using System.Windows.Forms;
 

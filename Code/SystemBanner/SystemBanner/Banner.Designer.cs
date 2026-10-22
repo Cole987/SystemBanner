@@ -1,4 +1,5 @@
 ﻿//Copyright (c) 2026, Aaron Wawrzyniak. MIT License Applies.
+//Windows XP port, logon screen banner, watchdog and live updates: Copyright (c) 2026, Cole. MIT License Applies.
 using System;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
@@ -7,7 +8,7 @@ namespace SystemBanner
 {
     partial class Banner
     {
-        //make my form click-through
+        //plain opaque, borderless, always on top window (no transparency, it only blurred the marking and broke over fullscreen apps)
         protected override CreateParams CreateParams
         {
             get
@@ -16,10 +17,6 @@ namespace SystemBanner
                 cp.Style &= (~0x00C00000); // WS_CAPTION
                 cp.Style &= (~0x00800000); // WS_BORDER
                 cp.ExStyle = 0x00000080 | 0x00000008; // WS_EX_TOOLWINDOW | WS_EX_TOPMOST
-                if (!Program.secureDesktop) //XP does not draw layered windows created on the (hidden) Winlogon desktop, keep it a plain opaque window there
-                {
-                    cp.ExStyle |= 0x80000 /* WS_EX_LAYERED */ | 0x20 /* WS_EX_TRANSPARENT */ | 0x80/* WS_EX_TOOLWINDOW */;
-                }
                 return cp;
             }
         }
@@ -42,14 +39,14 @@ namespace SystemBanner
         [System.Runtime.InteropServices.DllImport("USER32")]
         private static extern System.IntPtr GetForegroundWindow();
 
-        //used to keep the banner above the XP Welcome screen/logon dialog on the Winlogon desktop
+        //used to keep the banner above everything: fullscreen apps, the XP Welcome screen and logon dialog
         [System.Runtime.InteropServices.DllImport("USER32")]
         private static extern bool SetWindowPos(System.IntPtr hWnd, System.IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
         private static readonly System.IntPtr HWND_TOPMOST = new System.IntPtr(-1);
         private const uint SWP_NOSIZE_NOMOVE_NOACTIVATE = 0x0001 | 0x0002 | 0x0010; // SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
         private const uint SWP_SHOWWINDOW = 0x0040;
         private bool winlogonWasShown; //was the Winlogon desktop on screen at the last refresh
-        private int winlogonTicks; //refreshes since the last topmost check on the Winlogon desktop
+        private int topmostTicks; //refreshes since the last topmost check
         //make labels
         private System.Windows.Forms.Label classificationLabel;
         private System.Windows.Forms.Label leftLabel;
@@ -88,13 +85,7 @@ namespace SystemBanner
                     this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - bannerHeight; //no taskbar on the Winlogon desktop
                 }
             }
-            if (!Program.secureDesktop) //Opacity and TransparencyKey would make the window layered again
-            {
-                this.Opacity = 0.99; //magic number, balance of readability between the banner text and lower window controls
-                this.BackColor = System.Drawing.Color.Magenta;
-                this.TransparencyKey = System.Drawing.Color.Magenta;
-            }
-            this.Text = "SystemBanner"; 
+            this.Text = "SystemBanner";
             this.ShowInTaskbar = false; //look ma, no controls
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.BackColor = System.Drawing.Color.FromArgb(255, Program.bannerColor[0], Program.bannerColor[1], Program.bannerColor[2]); //set the background colors to the values the function arguments specify
@@ -142,23 +133,6 @@ namespace SystemBanner
 
             RefreshBannerTimer();
 
-            bool MouseOver(Form form) //if the mouse is hovering over the Banner then return true
-            {
-                if (bannerScreen < System.Windows.Forms.Screen.AllScreens.Length)
-                {
-                    if ((Cursor.Position.X < form.Right && Cursor.Position.X >= form.Left))
-                    {
-                        if (Cursor.Position.Y < form.Bottom && Cursor.Position.Y >= form.Top)
-                        {
-                            return true;
-
-                        }
-                    }
-                    return false;
-                }
-                this.Close();
-                return false;
-            }
             bool IsForegroundFullScreen() //if any app is fullscreen and it clips the top left of the screen the banner is on, return true
             {
 
@@ -194,7 +168,7 @@ namespace SystemBanner
 
             }
 
-            void RefreshBannerTimer() //run every 0.05 seconds to detect if a mouse hover or a fullscreen app should change opacity, and if so, do it. Else, set opacity back to normal.
+            void RefreshBannerTimer() //run every 0.05 seconds to keep the banner on top of everything
             {
                 Timer bannerTimer = new Timer();
                 bannerTimer.Interval = (50); // 0.05 sec
@@ -210,35 +184,20 @@ namespace SystemBanner
                     {
                         SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE | SWP_SHOWWINDOW);
                         this.Refresh();
-                        winlogonTicks = 0;
+                        topmostTicks = 0;
                         Program.LogEventString("WINLOGON BANNER: DESKTOP ON SCREEN, REPAINTED " + this.Left + "L," + this.Top + "T," + this.Width + "W," + this.Height + "H VISIBLE=" + this.Visible);
                     }
-                    else if (winlogonShown && ++winlogonTicks >= 20) //then check the z-order once per second only, constant SetWindowPos slows the logon screen down
+                    else if (winlogonShown && ++topmostTicks >= 20) //then check the z-order once per second only, constant SetWindowPos slows the logon screen down
                     {
                         SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
-                        winlogonTicks = 0;
+                        topmostTicks = 0;
                     }
                     winlogonWasShown = winlogonShown;
                 }
-                else if (MouseOver(this))
+                else if (IsForegroundFullScreen() || ++topmostTicks >= 20) //user desktop: take the top spot back right away from a fullscreen app (video, game, slideshow), otherwise check once per second
                 {
-                    this.Opacity = 0.3;
-                }
-                else if (IsForegroundFullScreen())
-                {
-                    this.Opacity = 0.3;
-                    if (bannerPosition)
-                    {
-                        this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - bannerHeight;
-                    }
-                }
-                else
-                {
-                    this.Opacity = 0.99;
-                    if (bannerPosition)
-                    {
-                        this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].WorkingArea.Bottom;
-                    }
+                    SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
+                    topmostTicks = 0;
                 }
             }
 

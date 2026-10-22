@@ -1,4 +1,5 @@
 ; SystemBanner Group Policy template for Windows XP (ADM format).
+; Copyright (c) 2026, Cole. MIT License Applies.
 ; Same registry values as Group Policy\SystemBanner.admx (HKLM\Software\Policies\SystemBanner).
 ; gpedit.msc > Computer Configuration > Administrative Templates > right click > Add/Remove Templates > Add > SystemBanner.adm
 
