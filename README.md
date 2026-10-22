@@ -12,7 +12,7 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0), and to Windows 2000 Professional SP4 (a separate .NET Framework 2.0 executable built from the same source).
+This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0), and to Windows 2000 Professional SP4 (a separate .NET Framework 2.0 executable built from the same source). A native port runs on Mac OS X 10.6 Snow Leopard and later, in Objective-C up to OS X 10.11 El Capitan and in Swift from macOS 10.12 Sierra, see [MAC OS X AND MACOS](#mac-os-x-and-macos).
 
 --------
 FEATURES
@@ -59,7 +59,10 @@ REPOSITORY LAYOUT
 | `2000/` | Everything needed on a Windows 2000 computer: the .NET 2.0 binaries, install and removal scripts, Group Policy template (ADM), debug scripts. |
 | `XP/` | Everything needed on a Windows XP computer: binaries, install and removal scripts, Group Policy template (ADM), debug scripts. |
 | `Vista-7/` | Everything needed on a Windows Vista or Windows 7 computer: the same binaries, install and removal scripts, Group Policy templates (ADMX/ADML), debug scripts. |
-| `Code/` | Source code (Visual Studio solution). |
+| `SnowLeopard-ElCapitan/` | Everything needed on a Mac with Mac OS X 10.6 to OS X 10.11 (Intel): the app, the System Preferences pane, install and removal scripts, launchd agents, sample configuration profile. |
+| `macOS/` | The same for macOS 10.12 Sierra and later, universal apps (Intel and Apple Silicon). |
+| `macOS-ARM/` | The same for macOS 11 Big Sur and later on Apple Silicon only, without any Intel code. |
+| `Code/` | Source code (Visual Studio solution, `Code/SystemBanner-SnowLeopard-ElCapitan` and `Code/SystemBanner-macOS` for the Mac). |
 | `Docs/` | Screenshots used in this README. |
 | `Original/` | The original SystemBanner 1.1 files (Windows 10/11 MSI, scripts, ADMX templates), kept for reference. They do not include the features of this fork. |
 
@@ -180,6 +183,106 @@ KNOWN LIMITATIONS
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
 - Windows 2000: there is no Win+L, lock the computer with Ctrl+Alt+Del > Lock Computer. The Windows 2000 debug script gathers the event log entries through `/diag` and Event Viewer only, as Windows 2000 has no command line event log tool.
 - Tested on Windows 2000 Professional SP4, Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), with the full test series on each of them: installation, logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, restart after a kill, fullscreen and removal. Three screens, a standard user account and Fast User Switching were tested on Windows Vista. Windows 8 and later have not been tested.
+
+-----------------
+MAC OS X AND MACOS
+-----------------
+
+Tested on real Macs and virtual machines. On each of them: desktop banners, login window banner, live classification changes, and the settings (System Preferences pane or SystemBanner Settings) with an administrator account (Apply and password prompt) and with a standard account.
+
+| macOS | Folder | Mac |
+|---|---|---|
+| Mac OS X 10.6.8 Snow Leopard | `SnowLeopard-ElCapitan` | Mac mini 2007 |
+| OS X 10.9.5 Mavericks | `SnowLeopard-ElCapitan` | iMac 2011 |
+| OS X 10.11.6 El Capitan | `SnowLeopard-ElCapitan` | Virtual machine |
+| macOS 10.12 Sierra | `macOS` (with its embedded Swift runtime) | Virtual machine |
+| macOS 26 | `macOS-ARM` | MacBook Pro M4 Pro |
+
+macOS on Apple Silicon, top and bottom banners on the desktop:
+
+![Alt text](Docs/Images/MacOS_ARM_Desktop.png?raw=true)
+
+Login window:
+
+![Alt text](Docs/Images/MacOS_ARM_Login.png?raw=true)
+
+SystemBanner Settings opened by a standard user:
+
+![Alt text](Docs/Images/MacOS_ARM_NonAdmin.png?raw=true)
+
+Mac OS X 10.6 Snow Leopard, top and bottom banners and the SystemBanner pane in System Preferences:
+
+![Alt text](Docs/Images/SNBanner_Desktop_ControlPanel.png?raw=true)
+
+Mac OS X 10.6 Snow Leopard login window:
+
+![Alt text](Docs/Images/SNBanner_LoginScreen.png?raw=true)
+
+OS X 10.11 El Capitan, with the SystemBanner pane unlocked:
+
+![Alt text](Docs/Images/ElCapitan-Finder.png?raw=true)
+
+macOS 10.12 Sierra, desktop and login window:
+
+![Alt text](Docs/Images/Sierra_Desktop.png?raw=true)
+![Alt text](Docs/Images/Sierra_Login.png?raw=true)
+
+The Mac versions are native apps, since nothing of the Windows code (AppBars, services, Winlogon, registry) exists on a Mac. They come in three folders, pick the one that matches the Mac:
+
+| Folder | Mac | Language | Processor |
+|---|---|---|---|
+| `SnowLeopard-ElCapitan/` | Mac OS X 10.6 Snow Leopard to OS X 10.11 El Capitan | Objective-C | Intel 64 bit |
+| `macOS/` | macOS 10.12 Sierra and later | Swift | Universal, Intel and Apple Silicon |
+| `macOS-ARM/` | macOS 11 Big Sur and later | Swift, same source as `macOS/` | Apple Silicon only |
+
+`macOS-ARM` is built from the same Swift source as `macOS`, without the Intel code and without the Swift runtime that `macOS` carries for 10.12 to 10.14.3 (180 KB instead of 11 MB per app). It is the version to keep once Apple drops Intel Macs. 32 bit Intel Macs (2006 Core Duo models) are not supported, today's Xcode cannot build for them any more.
+
+Each folder holds the banner, `SystemBanner.app`, and a way to change the classification, the text, the colors and the top and bottom option, with a live preview, for administrators only:
+
+- `SnowLeopard-ElCapitan`: a **SystemBanner pane in System Preferences** (in the Other section). Nothing can be changed until an administrator clicks the lock and types their password.
+- `macOS` and `macOS-ARM`: the **SystemBanner Settings** app in Applications > Utilities, since recent macOS versions sideline third party panes in System Settings. It only opens for members of the admin group, and every change asks for an administrator password.
+
+When a configuration profile manages SystemBanner, both show it and change nothing.
+
+### Installation
+
+Requirements: an administrator account, and the Mac listed for the folder.
+
+1. Copy the whole folder (`SnowLeopard-ElCapitan`, `macOS` or `macOS-ARM`) to the Mac.
+2. In Terminal, run its installer from that folder, for example `sudo ./InstallSystemBanner_macOS.sh`. It refuses to run on a Mac the folder is not meant for, and names the right folder.
+3. The installer ends with `[OK] The SystemBanner banner is running`. Log out to see the login window banner.
+
+All three installers put the files in the same places, so moving a Mac from one folder to another (after a macOS upgrade, for example) only takes running the other installer:
+
+- `SystemBanner.app` in `/Library/Application Support/SystemBanner`;
+- the SystemBanner pane in `/Library/PreferencePanes` (`SnowLeopard-ElCapitan`), or `SystemBanner Settings.app` in `/Applications/Utilities` (`macOS`, `macOS-ARM`);
+- two launchd agents in `/Library/LaunchAgents`: `com.systembanner.agent` starts the banner in every user session, `com.systembanner.loginwindow` starts it on the login window. launchd restarts a banner within about 3 seconds if it is quit or killed.
+
+To remove it, run the folder's removal script, for example `sudo ./RemoveSystemBanner_macOS.sh`. The configuration is kept.
+
+### Administration
+
+SystemBanner reads the preferences domain `com.systembanner`, with the same keys as the Windows registry values (`Simple`, `0` to `5`, `Text`, `TopAndBottom`, `Debug`). Only computer wide settings count, a user cannot override them in their own preferences.
+
+- On one Mac: System Preferences > SystemBanner (10.6 to 10.11), or Applications > Utilities > SystemBanner Settings (10.12 and later).
+- On many Macs (10.7 and later): edit and deploy `Configuration/SystemBanner.mobileconfig` with your MDM (Jamf, Intune, Workspace ONE, etc.), or install it with the Profiles preference pane. This is the counterpart of Group Policy, and it overrides the local settings.
+- From Terminal: `sudo defaults write /Library/Preferences/com.systembanner Simple -int 4`, then `sudo chmod 644 /Library/Preferences/com.systembanner.plist`. On 10.6 servers, MCX (Workgroup Manager) can manage the same domain.
+
+Changes apply within about one second. `SystemBanner.app/Contents/MacOS/SystemBanner --diag` prints what SystemBanner sees. With `Debug` set to 1, SystemBanner logs to Console.app.
+
+### Differences with the Windows version
+
+- **No reserved screen space.** macOS has no AppBars: the top banner sits right below the menu bar and the bottom banner right above the Dock, over other windows. Clicks go through the banner, so a title bar under it can still be dragged. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.
+- **Fullscreen apps are not resized.** When an app covers a whole screen, the banners move to the screen edges and stay over it, but they cover the top and bottom of the app, since resizing other apps would need the Accessibility permission.
+- **Login window.** The login window banner uses launchd's pre-login agents. The top banner sits below the strip of status icons (battery, Wi-Fi, user switching) of the main screen. It works on every version tested, see the table above.
+- Gatekeeper: the apps are signed ad hoc, not notarized. The installer removes the quarantine flag so they run on recent macOS.
+
+### Building
+
+On a Mac with Xcode or the Command Line Tools:
+
+- `Code/SystemBanner-SnowLeopard-ElCapitan/build.sh` builds `SnowLeopard-ElCapitan/Binaries` (the app and the preference pane). System Preferences of 10.6 and 10.7 runs with Objective-C garbage collection and reopens in 32 bit for a pane that does not support it, which fails without i386 code. Today's compilers cannot build garbage collected code, so the script marks the pane as supporting it, and `SettingsPane.m` is written to run with and without garbage collection. Objective-C with manual memory management, since Swift and ARC cannot target Snow Leopard any more, and only APIs available on 10.6, checked by `-Wunguarded-availability`.
+- `Code/SystemBanner-macOS/build.sh` builds both `macOS/Binaries` and `macOS-ARM/Binaries` from the same Swift sources, in the Swift 5 language mode (Swift concurrency needs macOS 10.15).
 
 --------
 BUILDING

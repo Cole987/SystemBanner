@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- SystemBanner configuration profile, for Mac OS X 10.7 Lion and later (on 10.6 use MCX, defaults or SystemBanner Settings, see README).
+     Edit the values under mcx_preference_settings, then install it with the Profiles preference pane or your MDM.
+     Simple: 0 unconfigured, 1 UNCLASSIFIED, 2 CUI, 3 CONFIDENTIAL, 4 SECRET, 5 TOP SECRET, 6 TOP SECRET//SCI (overrides the custom settings).
+     Custom settings instead of Simple: "0" "1" "2" background red green blue, "3" "4" "5" text red green blue (0-255), "Text". -->
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadContent</key>
+			<dict>
+				<key>com.systembanner</key>
+				<dict>
+					<key>Forced</key>
+					<array>
+						<dict>
+							<key>mcx_preference_settings</key>
+							<dict>
+								<key>Simple</key>
+								<integer>1</integer>
+								<key>TopAndBottom</key>
+								<integer>0</integer>
+								<key>Debug</key>
+								<integer>0</integer>
+							</dict>
+						</dict>
+					</array>
+				</dict>
+			</dict>
+			<key>PayloadDisplayName</key>
+			<string>SystemBanner</string>
+			<key>PayloadIdentifier</key>
+			<string>com.systembanner.profile.settings</string>
+			<key>PayloadType</key>
+			<string>com.apple.ManagedClient.preferences</string>
+			<key>PayloadUUID</key>
+			<string>C560557D-8F7E-43EC-9F1E-5393A0D43106</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>Sets the classification shown by SystemBanner.</string>
+	<key>PayloadDisplayName</key>
+	<string>SystemBanner</string>
+	<key>PayloadIdentifier</key>
+	<string>com.systembanner.profile</string>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>846C5E3B-51D1-48D1-9798-72165F3E60A7</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>
