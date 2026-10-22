@@ -4,7 +4,7 @@
 ABOUT
 -----
 
-SystemBanner is an application used to display information security attributes or classification markings applicable for the Windows systems it runs on.
+SystemBanner is an application used to display information security attributes or classification markings applicable for the Windows and Mac systems it runs on.
 
 SystemBanner was built with standards in mind. For example, SystemBanner comes out of the box with Group Policy templates that can configure SystemBanner to display the different levels of United States Classified National Security Information as defined by EO 13526, as amended, and United States Controlled Unclassified Information as defined by EO 13556, as amended.
 
@@ -12,11 +12,22 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0), and to Windows 2000 Professional SP4 (a separate .NET Framework 2.0 executable built from the same source). A native port runs on Mac OS X 10.6 Snow Leopard and later, in Objective-C up to OS X 10.11 El Capitan and in Swift from macOS 10.12 Sierra, see [MAC OS X AND MACOS](#mac-os-x-and-macos).
+This fork is a retro computing and preservation project. It keeps SystemBanner alive on systems the original version (Windows 10 and 11) does not run on: Windows from Windows 2000 to Windows 7, and the Mac from Mac OS X 10.6 Snow Leopard to today's macOS. Each version was tested with care on real computers or virtual machines. It is shared for the joy of old machines, as is: it has not been evaluated or certified for computers that handle real classified or sensitive information.
 
---------
-FEATURES
---------
+| System | Folder | Build |
+|---|---|---|
+| Windows 2000 Professional SP4 | `2000/` | .NET Framework 2.0, x86 |
+| Windows XP SP3 | `XP/` | .NET Framework 4.0, x86 |
+| Windows Vista SP2 and Windows 7 | `Vista-7/` | The same .NET Framework 4.0 executable, on 32 and 64 bit Windows |
+| Mac OS X 10.6 Snow Leopard to OS X 10.11 El Capitan | `SnowLeopard-ElCapitan/` | Objective-C, 64 bit Intel Macs |
+| macOS 10.12 Sierra and later | `macOS/` | Swift, Intel and Apple Silicon Macs |
+| macOS 11 Big Sur and later | `macOS-ARM/` | Swift, Apple Silicon Macs only |
+
+The Windows versions are described in the next sections, the Mac versions in [MAC OS X AND MACOS](#mac-os-x-and-macos).
+
+----------------
+WINDOWS FEATURES
+----------------
 
 - **Windows XP SP3, Windows Vista SP2 and Windows 7 support.** Targets .NET Framework 4.0 and x86, the newest runtime XP supports. The same executable runs on 32 and 64 bit Windows Vista and Windows 7.
 - **Banner on the logon screen.** The banner is also shown on the secure Winlogon desktop: the logon screen (classic logon dialog and Welcome screen), the locked workstation and the Ctrl+Alt+Del screen, including right after a logoff.
@@ -49,6 +60,48 @@ Windows 2000 startup, before the logon dialog (the banner is already shown on th
 ![Alt text](Docs/Images/Win2000_Logon_Screenshot.png?raw=true)
 
 *Fullscreen screenshot: Big Buck Bunny, (c) copyright 2008, Blender Foundation, www.bigbuckbunny.org, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).*
+
+--------------
+MACOS FEATURES
+--------------
+
+- **Mac OS X 10.6 Snow Leopard to macOS 26.** Three builds: Objective-C for Mac OS X 10.6 to OS X 10.11 on Intel Macs, Swift for macOS 10.12 and later on Intel and Apple Silicon Macs, and a Swift build for Apple Silicon only. See [MAC OS X AND MACOS](#mac-os-x-and-macos).
+- **Banner on the login window.** A launchd agent shows the banner on the login window too, below its status icons.
+- **Persistence.** launchd restarts the banner within about 3 seconds if a user quits or kills it.
+- **Always visible, never in the way.** The banner is opaque and stays over every window. Clicks go through it. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.
+- **Fullscreen apps.** When an app covers a whole screen, the banners move to the screen edges and stay visible over it.
+- **Settings for administrators only.** A System Preferences pane with the standard lock on Mac OS X 10.6 to 10.11, the SystemBanner Settings app on macOS 10.12 and later, both with a live preview. A configuration profile can also set SystemBanner, like Group Policy on Windows.
+- **Live configuration updates.** Classification, text, colors and banner position changes apply in about one second, with no restart.
+- **Troubleshooting.** `--diag` prints what SystemBanner reads, and the `Debug` setting logs to Console.app.
+
+macOS 15.1 Sequoia on Apple Silicon, top and bottom banners on the desktop:
+
+![Alt text](Docs/Images/MacOS_ARM_Desktop.png?raw=true)
+
+Login window:
+
+![Alt text](Docs/Images/MacOS_ARM_Login.png?raw=true)
+
+SystemBanner Settings opened by a standard user:
+
+![Alt text](Docs/Images/MacOS_ARM_NonAdmin.png?raw=true)
+
+Mac OS X 10.6 Snow Leopard, top and bottom banners and the SystemBanner pane in System Preferences:
+
+![Alt text](Docs/Images/SNBanner_Desktop_ControlPanel.png?raw=true)
+
+Mac OS X 10.6 Snow Leopard login window:
+
+![Alt text](Docs/Images/SNBanner_LoginScreen.png?raw=true)
+
+OS X 10.11 El Capitan, with the SystemBanner pane unlocked:
+
+![Alt text](Docs/Images/ElCapitan-Finder.png?raw=true)
+
+macOS 10.12 Sierra, desktop and login window:
+
+![Alt text](Docs/Images/Sierra_Desktop.png?raw=true)
+![Alt text](Docs/Images/Sierra_Login.png?raw=true)
 
 -----------------
 REPOSITORY LAYOUT
@@ -198,35 +251,6 @@ Tested on real Macs and virtual machines. On each of them: desktop banners, logi
 | macOS 10.12 Sierra | `macOS` (with its embedded Swift runtime) | Virtual machine |
 | macOS 15.1 Sequoia | `macOS-ARM` | Apple Silicon virtual machine |
 | macOS 26 | `macOS-ARM` | MacBook Pro M4 Pro |
-
-macOS 15.1 Sequoia on Apple Silicon, top and bottom banners on the desktop:
-
-![Alt text](Docs/Images/MacOS_ARM_Desktop.png?raw=true)
-
-Login window:
-
-![Alt text](Docs/Images/MacOS_ARM_Login.png?raw=true)
-
-SystemBanner Settings opened by a standard user:
-
-![Alt text](Docs/Images/MacOS_ARM_NonAdmin.png?raw=true)
-
-Mac OS X 10.6 Snow Leopard, top and bottom banners and the SystemBanner pane in System Preferences:
-
-![Alt text](Docs/Images/SNBanner_Desktop_ControlPanel.png?raw=true)
-
-Mac OS X 10.6 Snow Leopard login window:
-
-![Alt text](Docs/Images/SNBanner_LoginScreen.png?raw=true)
-
-OS X 10.11 El Capitan, with the SystemBanner pane unlocked:
-
-![Alt text](Docs/Images/ElCapitan-Finder.png?raw=true)
-
-macOS 10.12 Sierra, desktop and login window:
-
-![Alt text](Docs/Images/Sierra_Desktop.png?raw=true)
-![Alt text](Docs/Images/Sierra_Login.png?raw=true)
 
 The Mac versions are native apps, since nothing of the Windows code (AppBars, services, Winlogon, registry) exists on a Mac. They come in three folders, pick the one that matches the Mac:
 
