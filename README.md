@@ -12,7 +12,7 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork is a retro computing and preservation project. It keeps SystemBanner alive on systems the original version (Windows 10 and 11) does not run on: Windows from Windows 2000 to Windows 7, and the Mac from Mac OS X 10.6 Snow Leopard to today's macOS. Each version was tested with care on real computers or virtual machines. It is shared for the joy of old machines, as is: it has not been evaluated or certified for computers that handle real classified or sensitive information.
+This fork is a retro computing and preservation project. It keeps SystemBanner alive on systems the original version (Windows 10 and 11) does not run on: Windows from Windows 2000 to Windows 7, and the Mac from Mac OS X 10.6 Snow Leopard to today's macOS. Each version was tested with care on real computers or virtual machines. It is shared for the joy of old machines, as is: it has not been evaluated or certified for computers that handle real classified or sensitive information. (And if one of your Windows 2000 computers really handles classified information in 2026, the banner is not your biggest problem.)
 
 | System | Folder | Build |
 |---|---|---|
@@ -67,7 +67,7 @@ MACOS FEATURES
 
 - **Mac OS X 10.6 Snow Leopard to macOS 26.** Three builds: Objective-C for Mac OS X 10.6 to OS X 10.11 on Intel Macs, Swift for macOS 10.12 and later on Intel and Apple Silicon Macs, and a Swift build for Apple Silicon only. See [MAC OS X AND MACOS](#mac-os-x-and-macos).
 - **Banner on the login window.** A launchd agent shows the banner on the login window too, below its status icons.
-- **Persistence.** launchd restarts the banner within about 3 seconds if a user quits or kills it.
+- **Persistence.** launchd restarts the banner within about 3 seconds if a user quits or kills it. It is a banner, it does not take a hint.
 - **Always visible, never in the way.** The banner is opaque and stays over every window. Clicks go through it. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.
 - **Fullscreen apps.** When an app covers a whole screen, the banners move to the screen edges and stay visible over it.
 - **Settings for administrators only.** A System Preferences pane with the standard lock on Mac OS X 10.6 to 10.11, the SystemBanner Settings app on macOS 10.12 and later, both with a live preview. A configuration profile can also set SystemBanner, like Group Policy on Windows.
@@ -321,7 +321,7 @@ The Windows 2000 build uses `SystemBanner2000.csproj` in the same folder: same s
 ROADMAP
 -------
 
-- **More classification systems.** Stock presets for the French, German and British classification markings, and for NATO, built on the same model as the United States levels today: chosen with Group Policy, a configuration profile or the settings, on every Windows and Mac version. United Nations markings will follow if their scheme is publicly documented.
+- **More classification systems.** Stock presets for the French, German and British classification markings, and for NATO, built on the same model as the United States levels today: chosen with Group Policy, a configuration profile or the settings, on every Windows and Mac version. United Nations markings will follow if their scheme is publicly documented, which, for a classification scheme, is not a given.
 - **Microsoft Office add-in.** Mark documents with the classification directly, for example in their header and footer, from the same settings as the banner.
 
 -------
