@@ -321,7 +321,8 @@ The Windows 2000 build uses `SystemBanner2000.csproj` in the same folder: same s
 ROADMAP
 -------
 
-- **More classification systems.** Stock presets for the French, German and British classification markings, built on the same model as the United States levels today: chosen with Group Policy, a configuration profile or the settings, on every Windows and Mac version.
+- **More classification systems.** Stock presets for the French, German and British classification markings, and for NATO, built on the same model as the United States levels today: chosen with Group Policy, a configuration profile or the settings, on every Windows and Mac version. United Nations markings will follow if their scheme is publicly documented.
+- **Microsoft Office add-in.** Mark documents with the classification directly, for example in their header and footer, from the same settings as the banner.
 
 -------
 CREDITS
