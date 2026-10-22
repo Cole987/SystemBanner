@@ -318,6 +318,12 @@ The project in `Code/SystemBanner` targets .NET Framework 4.0, x86. It builds wi
 The Windows 2000 build uses `SystemBanner2000.csproj` in the same folder: same sources, .NET Framework 2.0, x86, with `WIN2000` defined. `Win2000.cs` and the `#if WIN2000` blocks hold its differences (no registry views, no `WTSQueryUserToken`, self installation), and `App2000.config` selects the 2.0 runtime. It needs the .NET Framework 3.5 (which includes 2.0) targeting support, or the `Microsoft.NETFramework.ReferenceAssemblies.net20` NuGet package.
 
 -------
+ROADMAP
+-------
+
+- **More classification systems.** Stock presets for the French, German and British classification markings, built on the same model as the United States levels today: chosen with Group Policy, a configuration profile or the settings, on every Windows and Mac version.
+
+-------
 CREDITS
 -------
 
