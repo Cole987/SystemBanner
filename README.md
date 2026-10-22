@@ -12,13 +12,13 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork brings SystemBanner to Windows XP SP3 and Windows Vista SP2 (one x86 executable, .NET Framework 4.0).
+This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0).
 
 --------
 FEATURES
 --------
 
-- **Windows XP SP3 and Windows Vista SP2 support.** Targets .NET Framework 4.0 and x86, the newest runtime XP supports. The same executable runs on 32 and 64 bit Windows Vista.
+- **Windows XP SP3, Windows Vista SP2 and Windows 7 support.** Targets .NET Framework 4.0 and x86, the newest runtime XP supports. The same executable runs on 32 and 64 bit Windows Vista and Windows 7.
 - **Banner on the logon screen.** The banner is also shown on the secure Winlogon desktop: the logon screen (classic logon dialog and Welcome screen), the locked workstation and the Ctrl+Alt+Del screen, including right after a logoff.
 - **Persistence.** A Windows service restarts the banner within about 3 seconds if a user closes or kills it. Alt+F4 does not close the banner, and Windows restarts the service if it crashes.
 - **Always visible.** The banner is fully opaque and always on top. The bottom banner sits right below the taskbar in the z-order, so the Start menu and tray notifications that open over it stay readable.
@@ -45,7 +45,7 @@ REPOSITORY LAYOUT
 | Folder | Content |
 |---|---|
 | `XP/` | Everything needed on a Windows XP computer: binaries, install and removal scripts, Group Policy template (ADM), debug scripts. |
-| `Vista/` | Everything needed on a Windows Vista computer: the same binaries, install and removal scripts, Group Policy templates (ADMX/ADML), debug scripts. |
+| `Vista/` | Everything needed on a Windows Vista or Windows 7 computer: the same binaries, install and removal scripts, Group Policy templates (ADMX/ADML), debug scripts. |
 | `Code/` | Source code (Visual Studio solution). |
 | `Docs/` | Screenshots used in this README. |
 | `Original/` | The original SystemBanner 1.1 files (Windows 10/11 MSI, scripts, ADMX templates), kept for reference. They do not include the features of this fork. |
@@ -54,9 +54,9 @@ REPOSITORY LAYOUT
 INSTALLATION
 ------------
 
-### Windows Vista SP2 (32 or 64 bit)
+### Windows Vista SP2 and Windows 7 (32 or 64 bit)
 
-Requirements: Windows Vista SP2, .NET Framework 4.0 (or a later 4.x version Vista supports), an administrator account.
+Requirements: Windows Vista SP2 or Windows 7, .NET Framework 4.0 (or a later 4.x version), an administrator account. Windows 7 uses the files of the `Vista` folder.
 
 1. Copy the whole `Vista` folder to the computer.
 2. Right click `Vista\InstallSystemBanner_Vista.bat` and select "Run as administrator".
@@ -155,7 +155,7 @@ KNOWN LIMITATIONS
 - Windows Vista: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
-- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86) and Windows Vista SP2 (x64), including three screens, a standard user account, Fast User Switching on Vista and removal. Windows 7 and later have not been tested.
+- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x64), including three screens, a standard user account, Fast User Switching on Vista and removal. Windows 8 and later have not been tested.
 
 --------
 BUILDING
