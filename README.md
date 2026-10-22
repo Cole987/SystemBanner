@@ -40,6 +40,7 @@ WHAT'S NEW IN THE WINDOWS XP EDITION
 
 ![Alt text](Docs/Images/XP_Logon_Screenshot.png?raw=true)
 ![Alt text](Docs/Images/XP_Classic_Logon_Screenshot.png?raw=true)
+![Alt text](Docs/Images/XP_Desktop_Screenshot.png?raw=true)
 
 ---------------------------------
 INSTALLATION (WINDOWS XP EDITION)
