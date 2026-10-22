@@ -19,6 +19,7 @@ IF EXIST %NGEN% %NGEN% uninstall "%ProgramFiles%\SystemBanner\SystemBanner.exe" 
 REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "SystemBanner" /F
 DEL "%ProgramFiles%\SystemBanner\SystemBanner.exe"
 DEL "%ProgramFiles%\SystemBanner\SystemBanner.exe.config"
+DEL "%ProgramFiles%\SystemBanner\SystemBanner.pdb"
 RMDIR /S /Q "%ProgramFiles%\SystemBanner"
 DEL "%WINDIR%\inf\SystemBanner.adm"
 PAUSE

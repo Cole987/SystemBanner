@@ -16,6 +16,8 @@ ECHO === Copying files to "%ProgramFiles%\SystemBanner"
 IF NOT EXIST "%ProgramFiles%\SystemBanner" MKDIR "%ProgramFiles%\SystemBanner"
 COPY /Y "%~dp0Binaries\SystemBanner.exe" "%ProgramFiles%\SystemBanner\"
 COPY /Y "%~dp0Binaries\SystemBanner.exe.config" "%ProgramFiles%\SystemBanner\"
+REM symbols, so crash logs show line numbers
+COPY /Y "%~dp0Binaries\SystemBanner.pdb" "%ProgramFiles%\SystemBanner\"
 REM XP Group Policy template, add it in gpedit.msc > Administrative Templates > Add/Remove Templates
 COPY /Y "%~dp0SystemBanner.adm" "%WINDIR%\inf\"
 
