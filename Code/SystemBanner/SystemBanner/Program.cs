@@ -107,6 +107,45 @@ namespace SystemBanner
             BuildBanners();
             //set a timer for refreshing banners if needed
             RefreshBannerTimer();
+            //and react right away to classification changes instead of waiting for the timer
+            WatchPolicyKey();
+        }
+        [System.Runtime.InteropServices.DllImport("ADVAPI32")]
+        private static extern int RegNotifyChangeKeyValue(IntPtr hKey, bool bWatchSubtree, int dwNotifyFilter, IntPtr hEvent, bool fAsynchronous);
+        private const int REG_NOTIFY_CHANGE_NAME_AND_LAST_SET = 0x1 | 0x4; // REG_NOTIFY_CHANGE_NAME | REG_NOTIFY_CHANGE_LAST_SET
+        private static void WatchPolicyKey()
+        {
+            //the banners exist now, so this is the WinForms context of the UI thread
+            System.Threading.SynchronizationContext uiContext = System.Threading.SynchronizationContext.Current;
+            if (uiContext == null)
+            {
+                return;
+            }
+            //on XP a registry notification dies with the thread that asked for it, so keep one thread for it
+            System.Threading.Thread watcher = new System.Threading.Thread(delegate ()
+            {
+                try
+                {
+                    RegistryView view = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Default;
+                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                    using (var policies = hklm.OpenSubKey(@"SOFTWARE\Policies")) //watch the parent, SystemBanner may not exist yet
+                    using (var changed = new System.Threading.AutoResetEvent(false))
+                    {
+                        while (policies != null && RegNotifyChangeKeyValue(policies.Handle.DangerousGetHandle(), true, REG_NOTIFY_CHANGE_NAME_AND_LAST_SET, changed.SafeWaitHandle.DangerousGetHandle(), true) == 0)
+                        {
+                            changed.WaitOne();
+                            System.Threading.Thread.Sleep(300); //group policy writes several values in a row, apply them together
+                            uiContext.Post(delegate { RefreshBannerTick(null, EventArgs.Empty); }, null);
+                        }
+                    }
+                }
+                catch (Exception ex) //the 5 sec timer still picks up changes
+                {
+                    LogEventString("REGISTRY WATCH ERROR " + ex.Message);
+                }
+            });
+            watcher.IsBackground = true;
+            watcher.Start();
         }
         public static void GetRegValues()
         {
