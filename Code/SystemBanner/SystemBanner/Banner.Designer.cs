@@ -16,7 +16,10 @@ namespace SystemBanner
                 cp.Style &= (~0x00C00000); // WS_CAPTION
                 cp.Style &= (~0x00800000); // WS_BORDER
                 cp.ExStyle = 0x00000080 | 0x00000008; // WS_EX_TOOLWINDOW | WS_EX_TOPMOST
-                cp.ExStyle |= 0x80000 /* WS_EX_LAYERED */ | 0x20 /* WS_EX_TRANSPARENT */ | 0x80/* WS_EX_TOOLWINDOW */;
+                if (!Program.secureDesktop) //XP does not draw layered windows created on the (hidden) Winlogon desktop, keep it a plain opaque window there
+                {
+                    cp.ExStyle |= 0x80000 /* WS_EX_LAYERED */ | 0x20 /* WS_EX_TRANSPARENT */ | 0x80/* WS_EX_TOOLWINDOW */;
+                }
                 return cp;
             }
         }
@@ -38,6 +41,15 @@ namespace SystemBanner
 
         [System.Runtime.InteropServices.DllImport("USER32")]
         private static extern System.IntPtr GetForegroundWindow();
+
+        //used to keep the banner above the XP Welcome screen/logon dialog on the Winlogon desktop
+        [System.Runtime.InteropServices.DllImport("USER32")]
+        private static extern bool SetWindowPos(System.IntPtr hWnd, System.IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
+        private static readonly System.IntPtr HWND_TOPMOST = new System.IntPtr(-1);
+        private const uint SWP_NOSIZE_NOMOVE_NOACTIVATE = 0x0001 | 0x0002 | 0x0010; // SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
+        private const uint SWP_SHOWWINDOW = 0x0040;
+        private bool winlogonWasShown; //was the Winlogon desktop on screen at the last refresh
+        private int winlogonTicks; //refreshes since the last topmost check on the Winlogon desktop
         //make labels
         private System.Windows.Forms.Label classificationLabel;
         private System.Windows.Forms.Label leftLabel;
@@ -71,10 +83,17 @@ namespace SystemBanner
             if (bannerPosition == Program.bannerBottom)
             {
                 this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].WorkingArea.Bottom - bannerHeight; //appear at the bottom of the screen
+                if (Program.secureDesktop)
+                {
+                    this.Top = System.Windows.Forms.Screen.AllScreens[bannerScreen].Bounds.Bottom - bannerHeight; //no taskbar on the Winlogon desktop
+                }
             }
-            this.Opacity = 0.99; //magic number, balance of readability between the banner text and lower window controls
-            this.BackColor = System.Drawing.Color.Magenta;
-            this.TransparencyKey = System.Drawing.Color.Magenta;
+            if (!Program.secureDesktop) //Opacity and TransparencyKey would make the window layered again
+            {
+                this.Opacity = 0.99; //magic number, balance of readability between the banner text and lower window controls
+                this.BackColor = System.Drawing.Color.Magenta;
+                this.TransparencyKey = System.Drawing.Color.Magenta;
+            }
             this.Text = "SystemBanner"; 
             this.ShowInTaskbar = false; //look ma, no controls
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
@@ -97,7 +116,7 @@ namespace SystemBanner
                 this.leftLabel = new System.Windows.Forms.Label(); //create the label
                 this.leftLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter; //draw the text centered within the banner/label
                 this.leftLabel.Size = new System.Drawing.Size(160, bannerHeight); //make the label the same size as the banner itself
-                this.leftLabel.Text = "SCREEN: " + bannerScreen; //set the text to the value the function argument specifies
+                this.leftLabel.Text = (Program.secureDesktop ? "WINLOGON: " : "SCREEN: ") + bannerScreen; //set the text to the value the function argument specifies
                 this.leftLabel.Font = new System.Drawing.Font("Arial", bannerHeight - 1, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Pixel); //set the label font to bold
                 this.leftLabel.Top = 1; //appear at the top of the banner
                 this.leftLabel.Left = 0; //appear at the left of the banner
@@ -184,7 +203,24 @@ namespace SystemBanner
             }
             void RefreshBanner(object sender, System.EventArgs e)
             {
-                if (MouseOver(this))
+                if (Program.secureDesktop) //logon screen: never fade, just stay on top, and only work while the Winlogon desktop is on screen
+                {
+                    bool winlogonShown = BannerService.IsWinlogonInputDesktop();
+                    if (winlogonShown && !winlogonWasShown) //nothing is drawn while the desktop is hidden, so come on top and repaint as soon as it shows
+                    {
+                        SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE | SWP_SHOWWINDOW);
+                        this.Refresh();
+                        winlogonTicks = 0;
+                        Program.LogEventString("WINLOGON BANNER: DESKTOP ON SCREEN, REPAINTED " + this.Left + "L," + this.Top + "T," + this.Width + "W," + this.Height + "H VISIBLE=" + this.Visible);
+                    }
+                    else if (winlogonShown && ++winlogonTicks >= 20) //then check the z-order once per second only, constant SetWindowPos slows the logon screen down
+                    {
+                        SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
+                        winlogonTicks = 0;
+                    }
+                    winlogonWasShown = winlogonShown;
+                }
+                else if (MouseOver(this))
                 {
                     this.Opacity = 0.3;
                 }
