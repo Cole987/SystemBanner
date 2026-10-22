@@ -313,6 +313,63 @@ namespace SystemBanner
             }
         }
 
+#if WIN2000
+        //Windows 2000 has no WTSQueryUserToken (and no Fast User Switching): one console session, where the user banner
+        //is started with a copy of the token of the logged on user's Explorer (the AppBar needs explorer anyway)
+        private const uint TOKEN_FOR_USER_COPY = 0x0001 | 0x0002 | 0x0008; // TOKEN_ASSIGN_PRIMARY | TOKEN_DUPLICATE | TOKEN_QUERY
+        private static void CheckUserBanners()
+        {
+            System.Diagnostics.Process[] explorers = System.Diagnostics.Process.GetProcessesByName("explorer");
+            if (explorers.Length == 0 || SessionRuns(explorers[0].SessionId, null))
+            {
+                return;
+            }
+            IntPtr explorerToken;
+            if (!OpenProcessToken(explorers[0].Handle, TOKEN_FOR_USER_COPY, out explorerToken))
+            {
+                Program.LogEventString("SERVICE: CANNOT OPEN EXPLORER TOKEN, ERROR " + Marshal.GetLastWin32Error());
+                return;
+            }
+            IntPtr userToken = IntPtr.Zero;
+            IntPtr environment = IntPtr.Zero;
+            try
+            {
+                if (!DuplicateTokenEx(explorerToken, MAXIMUM_ALLOWED, IntPtr.Zero, SecurityImpersonation, TokenPrimary, out userToken))
+                {
+                    Program.LogEventString("SERVICE: CANNOT COPY EXPLORER TOKEN, ERROR " + Marshal.GetLastWin32Error());
+                    return;
+                }
+                CreateEnvironmentBlock(out environment, userToken, false);
+                STARTUPINFO si = new STARTUPINFO();
+                si.cb = Marshal.SizeOf(si);
+                si.lpDesktop = @"winsta0\default"; //the user's normal desktop
+                PROCESS_INFORMATION pi;
+                string exe = Application.ExecutablePath;
+                if (CreateProcessAsUser(userToken, exe, new System.Text.StringBuilder("\"" + exe + "\""), IntPtr.Zero, IntPtr.Zero, false, CREATE_UNICODE_ENVIRONMENT, environment, System.IO.Path.GetDirectoryName(exe), ref si, out pi))
+                {
+                    CloseHandle(pi.hProcess);
+                    CloseHandle(pi.hThread);
+                    Program.LogEventString("SERVICE: BANNER STARTED FOR THE EXPLORER USER");
+                }
+                else
+                {
+                    Program.LogEventString("SERVICE: CANNOT START BANNER FOR THE EXPLORER USER, ERROR " + Marshal.GetLastWin32Error());
+                }
+            }
+            finally
+            {
+                if (environment != IntPtr.Zero)
+                {
+                    DestroyEnvironmentBlock(environment);
+                }
+                if (userToken != IntPtr.Zero)
+                {
+                    CloseHandle(userToken);
+                }
+                CloseHandle(explorerToken);
+            }
+        }
+#else
         private static void CheckUserBanners()
         {
             IntPtr sessions;
@@ -339,6 +396,7 @@ namespace SystemBanner
                 WTSFreeMemory(sessions);
             }
         }
+#endif
 
         private static bool SessionRuns(int sessionId, string processName) //null processName = a user mode SystemBanner (not this service nor a Winlogon banner, which share their session with the user)
         {

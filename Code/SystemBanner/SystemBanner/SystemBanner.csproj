@@ -103,6 +103,7 @@
     <Compile Include="Service.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Win2000.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Banner.resx">
       <DependentUpon>Banner.cs</DependentUpon>

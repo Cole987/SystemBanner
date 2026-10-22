@@ -65,6 +65,14 @@ namespace SystemBanner
                 WriteDiagnostics();
                 return;
             }
+#if WIN2000
+            //"/install", "/uninstall" and "/stop": Windows 2000 has no sc.exe, reg.exe nor taskkill.exe, so SystemBanner sets itself up, see Win2000.cs
+            if (args.Length > 0 && (args[0].ToLower() == "/install" || args[0].ToLower() == "/uninstall" || args[0].ToLower() == "/stop"))
+            {
+                Environment.ExitCode = Win2000.Setup(args[0].ToLower());
+                return;
+            }
+#endif
             //"/service" is used by the SystemBanner Windows service (watchdog), see Service.cs
             if (args.Length > 0 && args[0].ToLower() == "/service")
             {
@@ -133,6 +141,18 @@ namespace SystemBanner
             {
                 try
                 {
+#if WIN2000
+                    IntPtr policies = Win2000.OpenPoliciesKeyHandle(); //.NET 2.0 RegistryKey has no Handle, open the key with the Win32 API
+                    using (var changed = new System.Threading.AutoResetEvent(false))
+                    {
+                        while (policies != IntPtr.Zero && RegNotifyChangeKeyValue(policies, true, REG_NOTIFY_CHANGE_NAME_AND_LAST_SET, changed.SafeWaitHandle.DangerousGetHandle(), true) == 0)
+                        {
+                            changed.WaitOne();
+                            System.Threading.Thread.Sleep(300); //group policy writes several values in a row, apply them together
+                            uiContext.Post(delegate { RefreshBannerTick(null, EventArgs.Empty); }, null);
+                        }
+                    }
+#else
                     using (var policies = OpenPoliciesKey()) //watch the parent, SystemBanner may not exist yet
                     using (var changed = new System.Threading.AutoResetEvent(false))
                     {
@@ -143,6 +163,7 @@ namespace SystemBanner
                             uiContext.Post(delegate { RefreshBannerTick(null, EventArgs.Empty); }, null);
                         }
                     }
+#endif
                 }
                 catch (Exception ex) //the 5 sec timer still picks up changes
                 {
@@ -178,7 +199,12 @@ namespace SystemBanner
                 bannerText = simpleBannerTexts[0];
             }
             //log where the settings come from, only when it changes (this runs every 5 sec)
-            string summary = "REGISTRY: SETTINGS FROM " + source + ", TEXT=" + bannerText + ", COLORS=" + string.Join(",", bannerColor) + ", TOPANDBOTTOM=" + bannerTopAndBottom;
+#if WIN2000
+            string colorsText = Win2000.Join(bannerColor); //.NET 2.0 has no string.Join for int arrays
+#else
+            string colorsText = string.Join(",", bannerColor);
+#endif
+            string summary = "REGISTRY: SETTINGS FROM " + source + ", TEXT=" + bannerText + ", COLORS=" + colorsText + ", TOPANDBOTTOM=" + bannerTopAndBottom;
             if (summary != lastRegistrySummary)
             {
                 lastRegistrySummary = summary;
@@ -191,7 +217,11 @@ namespace SystemBanner
         //64 bit Windows the explicit views, in case the default view of this 32 bit process is redirected to Wow6432Node
         private static RegistryView[] PolicyViews()
         {
+#if WIN2000
+            return new RegistryView[] { RegistryView.Default }; //Windows 2000 is 32 bit only
+#else
             return Environment.Is64BitOperatingSystem ? new RegistryView[] { RegistryView.Default, RegistryView.Registry64, RegistryView.Registry32 } : new RegistryView[] { RegistryView.Default };
+#endif
         }
         private static RegistryKey OpenPoliciesKey() //HKLM\SOFTWARE\Policies in the first view that lets us open it, or null
         {
@@ -199,7 +229,11 @@ namespace SystemBanner
             {
                 try
                 {
+#if WIN2000
+                    RegistryKey policies = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies"); //.NET 2.0 has no registry views
+#else
                     RegistryKey policies = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view).OpenSubKey(@"SOFTWARE\Policies");
+#endif
                     if (policies != null)
                     {
                         return policies;
@@ -216,15 +250,26 @@ namespace SystemBanner
         {
             System.Text.StringBuilder report = new System.Text.StringBuilder();
             report.AppendLine("SystemBanner diagnostics, " + DateTime.Now);
+#if WIN2000
+            report.AppendLine("Windows: " + Environment.OSVersion + " (Windows 2000 build, 32 bit)");
+            report.AppendLine(".NET runtime: " + Environment.Version + ", user: " + Environment.UserDomainName + "\\" + Environment.UserName);
+            report.Append(Win2000.ProcessAndServiceReport());
+            foreach (RegistryView view in PolicyViews())
+#else
             report.AppendLine("Windows: " + Environment.OSVersion + ", 64 bit OS: " + Environment.Is64BitOperatingSystem + ", 64 bit process: " + Environment.Is64BitProcess);
             report.AppendLine(".NET runtime: " + Environment.Version + ", user: " + Environment.UserDomainName + "\\" + Environment.UserName);
             foreach (RegistryView view in new RegistryView[] { RegistryView.Default, RegistryView.Registry64, RegistryView.Registry32 })
+#endif
             {
                 report.AppendLine();
                 report.AppendLine("[" + view + " view] HKLM\\SOFTWARE\\Policies\\SystemBanner");
                 try
                 {
+#if WIN2000
+                    RegistryKey hklm = Registry.LocalMachine; //.NET 2.0 has no registry views
+#else
                     using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+#endif
                     using (var key = hklm.OpenSubKey(@"SOFTWARE\Policies\SystemBanner", RegistryKeyPermissionCheck.ReadSubTree))
                     {
                         if (key == null)
@@ -260,7 +305,11 @@ namespace SystemBanner
         private static bool ReadRegValues(RegistryView view) //true when the SystemBanner key exists in that view
         {
             //grab registry key and see if it exists
+#if WIN2000
+            RegistryKey hklm = Registry.LocalMachine; //.NET 2.0 has no registry views, Windows 2000 is 32 bit only
+#else
             using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+#endif
             using (var checkKey = hklm.OpenSubKey(@"SOFTWARE\Policies\SystemBanner", RegistryKeyPermissionCheck.ReadSubTree))
             {
                 if (checkKey != null)
@@ -413,7 +462,11 @@ namespace SystemBanner
                 displayPixelHash = currentDisplayPixelHash;
             }
             //compare contents, GetRegValues hands out a new color array on every read
+#if WIN2000
+            if (!Win2000.SameColors(oldBannerColor, bannerColor) || oldBannerText != bannerText || oldBannerTopAndBottom != bannerTopAndBottom) //.NET 2.0 has no LINQ
+#else
             if (!System.Linq.Enumerable.SequenceEqual(oldBannerColor, bannerColor) || oldBannerText != bannerText || oldBannerTopAndBottom != bannerTopAndBottom)
+#endif
             {
                 LogEventString("CLASSIFICATION CHANGED TO " + bannerText + ", REBUILDING BANNERS");
                 RebuildBanners();

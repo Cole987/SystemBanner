@@ -1,0 +1,113 @@
+; SystemBanner Group Policy template for Windows XP (ADM format).
+; Copyright (c) 2026, Cole. MIT License Applies.
+; Same registry values as Group Policy\SystemBanner.admx (HKLM\Software\Policies\SystemBanner).
+; gpedit.msc > Computer Configuration > Administrative Templates > right click > Add/Remove Templates > Add > SystemBanner.adm
+
+CLASS MACHINE
+
+CATEGORY !!SystemBanner
+
+  POLICY !!SimplePolicy
+    KEYNAME "Software\Policies\SystemBanner"
+    EXPLAIN !!SimpleExplain
+    PART !!SimplePart DROPDOWNLIST REQUIRED
+      VALUENAME "Simple"
+      ITEMLIST
+        NAME !!Unconfigured VALUE NUMERIC 0 DEFAULT
+        NAME !!Unclassified VALUE NUMERIC 1
+        NAME !!Cui VALUE NUMERIC 2
+        NAME !!Confidential VALUE NUMERIC 3
+        NAME !!Secret VALUE NUMERIC 4
+        NAME !!TopSecret VALUE NUMERIC 5
+        NAME !!TopSecretSci VALUE NUMERIC 6
+      END ITEMLIST
+    END PART
+  END POLICY
+
+  POLICY !!BackgroundPolicy
+    KEYNAME "Software\Policies\SystemBanner"
+    EXPLAIN !!BackgroundExplain
+    PART !!BackgroundRed NUMERIC REQUIRED
+      VALUENAME "0"
+      MIN 0 MAX 255 DEFAULT 255
+    END PART
+    PART !!BackgroundGreen NUMERIC REQUIRED
+      VALUENAME "1"
+      MIN 0 MAX 255 DEFAULT 255
+    END PART
+    PART !!BackgroundBlue NUMERIC REQUIRED
+      VALUENAME "2"
+      MIN 0 MAX 255 DEFAULT 255
+    END PART
+  END POLICY
+
+  POLICY !!ForegroundPolicy
+    KEYNAME "Software\Policies\SystemBanner"
+    EXPLAIN !!ForegroundExplain
+    PART !!ForegroundRed NUMERIC REQUIRED
+      VALUENAME "3"
+      MIN 0 MAX 255 DEFAULT 0
+    END PART
+    PART !!ForegroundGreen NUMERIC REQUIRED
+      VALUENAME "4"
+      MIN 0 MAX 255 DEFAULT 0
+    END PART
+    PART !!ForegroundBlue NUMERIC REQUIRED
+      VALUENAME "5"
+      MIN 0 MAX 255 DEFAULT 0
+    END PART
+  END POLICY
+
+  POLICY !!TextPolicy
+    KEYNAME "Software\Policies\SystemBanner"
+    EXPLAIN !!TextExplain
+    PART !!TextPart EDITTEXT REQUIRED
+      VALUENAME "Text"
+      MAXLEN 255
+    END PART
+  END POLICY
+
+  POLICY !!PositionPolicy
+    KEYNAME "Software\Policies\SystemBanner"
+    EXPLAIN !!PositionExplain
+    PART !!PositionPart DROPDOWNLIST REQUIRED
+      VALUENAME "TopAndBottom"
+      ITEMLIST
+        NAME !!TopOnly VALUE NUMERIC 0 DEFAULT
+        NAME !!TopAndBottom VALUE NUMERIC 1
+      END ITEMLIST
+    END PART
+  END POLICY
+
+END CATEGORY
+
+[strings]
+SystemBanner="SystemBanner"
+SimplePolicy="Set Simple Classification Setting"
+SimpleExplain="When this setting is enabled, the classification level selected will be shown. When set to UNCONFIGURED, not configured or disabled, the simple classification will be unconfigured and custom settings can be used."
+SimplePart="Simple Classification Setting"
+Unconfigured="UNCONFIGURED"
+Unclassified="UNCLASSIFIED"
+Cui="CUI"
+Confidential="CONFIDENTIAL"
+Secret="SECRET"
+TopSecret="TOP SECRET"
+TopSecretSci="TOP SECRET SCI"
+BackgroundPolicy="Set Custom Background Color"
+BackgroundExplain="When Set Simple Classification Setting is set to UNCONFIGURED, not configured or disabled, and this setting is defined, this custom color value is displayed in the Background."
+BackgroundRed="Red Background Color Value in Decimal (0-255)"
+BackgroundGreen="Green Background Color Value in Decimal (0-255)"
+BackgroundBlue="Blue Background Color Value in Decimal (0-255)"
+ForegroundPolicy="Set Custom Foreground Color"
+ForegroundExplain="When Set Simple Classification Setting is set to UNCONFIGURED, not configured or disabled, and this setting is defined, this custom color value is displayed in the Foreground."
+ForegroundRed="Red Foreground Color Value in Decimal (0-255)"
+ForegroundGreen="Green Foreground Color Value in Decimal (0-255)"
+ForegroundBlue="Blue Foreground Color Value in Decimal (0-255)"
+TextPolicy="Set Custom Text"
+TextExplain="When Set Simple Classification Setting is set to UNCONFIGURED, not configured or disabled, and this setting is defined, this custom text value is displayed in the Foreground."
+TextPart="Foreground Text"
+PositionPolicy="Set Banner Position Setting"
+PositionExplain="When this setting is enabled, the banner positions selected will be shown. When set to UNCONFIGURED, not configured or disabled, only the top banner will display."
+PositionPart="Banner Position Setting"
+TopOnly="Top Only"
+TopAndBottom="Top And Bottom"

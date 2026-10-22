@@ -12,7 +12,7 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0).
+This fork brings SystemBanner to Windows XP SP3, Windows Vista SP2 and Windows 7 (one x86 executable, .NET Framework 4.0), and to Windows 2000 Professional SP4 (a separate .NET Framework 2.0 executable built from the same source). Windows 2000 support is being tested.
 
 --------
 FEATURES
@@ -44,6 +44,7 @@ REPOSITORY LAYOUT
 
 | Folder | Content |
 |---|---|
+| `2000/` | Everything needed on a Windows 2000 computer: the .NET 2.0 binaries, install and removal scripts, Group Policy template (ADM), debug scripts. |
 | `XP/` | Everything needed on a Windows XP computer: binaries, install and removal scripts, Group Policy template (ADM), debug scripts. |
 | `Vista-7/` | Everything needed on a Windows Vista or Windows 7 computer: the same binaries, install and removal scripts, Group Policy templates (ADMX/ADML), debug scripts. |
 | `Code/` | Source code (Visual Studio solution). |
@@ -63,6 +64,16 @@ Requirements: Windows Vista SP2 or Windows 7, .NET Framework 4.0 (or a later 4.x
 3. The installer ends with `[OK] The SystemBanner service is running`. The service starts the banner within a few seconds. Lock the session with Win+L to see the logon screen banner.
 
 It works like the Windows XP installer below, with these differences: it copies the ADMX/ADML templates to `C:\Windows\PolicyDefinitions`, it does not mark the service as interactive (useless since Vista isolates services in session 0), and it lets the service start the banner, so the banner runs with the user's normal rights and not as administrator.
+
+### Windows 2000 Professional SP4
+
+Requirements: Windows 2000 Professional SP4, .NET Framework 2.0, an administrator account.
+
+1. Copy the whole `2000` folder to the computer.
+2. Run `2000\InstallSystemBanner_2000.bat` as an administrator.
+3. The installer ends with `[OK] The SystemBanner service is running`. Lock the computer with Ctrl+Alt+Del > Lock Computer to see the logon screen banner.
+
+Windows 2000 ships without `sc.exe`, `reg.exe` and `taskkill.exe`, so `SystemBanner.exe` does that work itself: `/stop` stops the service and the running banners, `/install` adds the Run key and installs and starts the service, `/uninstall` removes them. They report to `%TEMP%\SystemBanner_setup.log`, which the scripts display. The rest works like on Windows XP: same logon screen banner, same ADM template.
 
 ### Windows XP SP3
 
@@ -85,7 +96,7 @@ The installer:
 REMOVAL
 -------
 
-Run `XP\RemoveSystemBanner_XP.bat` as an administrator (on Vista and 7, right click `Vista-7\RemoveSystemBanner_Vista-7.bat` > Run as administrator). It stops and deletes the service, kills all running instances, restarts Explorer to release the screen space reserved by the banners, and deletes the files, the Run key and the Group Policy templates.
+Run `XP\RemoveSystemBanner_XP.bat` or `2000\RemoveSystemBanner_2000.bat` as an administrator (on Vista and 7, right click `Vista-7\RemoveSystemBanner_Vista-7.bat` > Run as administrator). It stops and deletes the service, kills all running instances, restarts Explorer to release the screen space reserved by the banners, and deletes the files, the Run key and the Group Policy templates.
 
 --------------
 ADMINISTRATION
@@ -104,7 +115,7 @@ SystemBanner reads its configuration from `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\
 
 To use Group Policy on Windows Vista and 7, open `gpedit.msc`: the installer already copied the ADMX/ADML templates, and the settings appear under Computer Configuration > Administrative Templates > SystemBanner.
 
-To use Group Policy on Windows XP, open `gpedit.msc`, right click Computer Configuration > Administrative Templates > Add/Remove Templates > Add, and select `C:\WINDOWS\inf\SystemBanner.adm`. The settings appear under Computer Configuration > Administrative Templates > SystemBanner.
+To use Group Policy on Windows 2000 and XP, open `gpedit.msc`, right click Computer Configuration > Administrative Templates > Add/Remove Templates > Add, and select `C:\WINDOWS\inf\SystemBanner.adm`. The settings appear under Computer Configuration > Administrative Templates > SystemBanner.
 
 Every change applies within about one second.
 
@@ -128,12 +139,12 @@ All modes watch `HKLM\SOFTWARE\Policies` for changes and rebuild their banners w
 TROUBLESHOOTING
 ---------------
 
-Use the scripts in `XP\Debug` or `Vista-7\Debug`, as an administrator (on Vista and 7, right click > Run as administrator):
+Use the scripts in `2000\Debug`, `XP\Debug` or `Vista-7\Debug`, as an administrator (on Vista and 7, right click > Run as administrator):
 
-1. Run `EnableDebug_XP.bat` or `EnableDebug_Vista-7.bat`. It turns debug logging on and restarts the service.
+1. Run `EnableDebug_2000.bat`, `EnableDebug_XP.bat` or `EnableDebug_Vista-7.bat`. It turns debug logging on and restarts the service.
 2. Reproduce the problem, then press a key in the script window.
 3. The script gathers every log in a `SystemBanner_logs` folder on the Desktop: crash and debug logs, service state, running SystemBanner processes, current settings and SystemBanner events (and the session list on Vista and 7).
-4. Run `DisableDebug_XP.bat` or `DisableDebug_Vista-7.bat` when you are done.
+4. Run `DisableDebug_2000.bat`, `DisableDebug_XP.bat` or `DisableDebug_Vista-7.bat` when you are done.
 
 If the banner does not show the configured classification, run `"C:\Program Files\SystemBanner\SystemBanner.exe" /diag` from a normal (not elevated) command prompt. It writes `SystemBanner_diag.txt` on the Desktop: Windows and .NET versions, process bitness, account, the SystemBanner values seen in each registry view (or the exact error), and what SystemBanner ends up reading. The Vista-7 debug script runs it too.
 
@@ -155,7 +166,8 @@ KNOWN LIMITATIONS
 - Windows Vista and 7: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
-- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), including three screens, a standard user account, Fast User Switching on Vista and removal. The full test series (logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, fullscreen) was run on each of them. Windows 8 and later have not been tested.
+- Windows 2000: there is no Win+L, lock the computer with Ctrl+Alt+Del > Lock Computer. The Windows 2000 debug script gathers the event log entries through `/diag` and Event Viewer only, as Windows 2000 has no command line event log tool.
+- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86 and x64) and Windows 7 (x86 and x64), including three screens, a standard user account, Fast User Switching on Vista and removal. The full test series (logon screen, lock, logoff, UAC prompt on Vista and 7, live classification changes, fullscreen) was run on each of them. Windows 2000 Professional SP4 support is being tested. Windows 8 and later have not been tested.
 
 --------
 BUILDING
@@ -163,10 +175,12 @@ BUILDING
 
 The project in `Code/SystemBanner` targets .NET Framework 4.0, x86. It builds with Visual Studio 2019 and the .NET Framework 4.0 targeting pack. Visual Studio 2022 no longer ships that targeting pack: add the `Microsoft.NETFramework.ReferenceAssemblies.net40` NuGet package to build it. The binaries in `XP/Binaries` and `Vista-7/Binaries` are the same build: Release, x86, with symbols (`SystemBanner.pdb`).
 
+The Windows 2000 build uses `SystemBanner2000.csproj` in the same folder: same sources, .NET Framework 2.0, x86, with `WIN2000` defined. `Win2000.cs` and the `#if WIN2000` blocks hold its differences (no registry views, no `WTSQueryUserToken`, self installation), and `App2000.config` selects the 2.0 runtime. It needs the .NET Framework 3.5 (which includes 2.0) targeting support, or the `Microsoft.NETFramework.ReferenceAssemblies.net20` NuGet package.
+
 -------
 CREDITS
 -------
 
-SystemBanner was created by Aaron Wawrzyniak ([awawrzyniak10](https://github.com/awawrzyniak10/SystemBanner)). The Windows XP, Vista and 7 fork (XP, Vista and 7 ports, logon screen banner, watchdog service, live updates, fullscreen handling) is by Cole. Stock classification colors are based on the GSA form color information collected by Frank Caviggia (https://github.com/fcaviggia/classification-banner).
+SystemBanner was created by Aaron Wawrzyniak ([awawrzyniak10](https://github.com/awawrzyniak10/SystemBanner)). The Windows 2000, XP, Vista and 7 fork (2000, XP, Vista and 7 ports, logon screen banner, watchdog service, live updates, fullscreen handling) is by Cole. Stock classification colors are based on the GSA form color information collected by Frank Caviggia (https://github.com/fcaviggia/classification-banner).
 
 SystemBanner is released under the MIT License, see `LICENSE`.
