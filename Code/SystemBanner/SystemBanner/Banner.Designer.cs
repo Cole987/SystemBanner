@@ -55,6 +55,27 @@ namespace SystemBanner
         private static System.IntPtr fittedWindow; //fullscreen window fitted between the banners, only once, so an app going back to fullscreen is not fought over
         private static RECT fittedRect; //the size it was given
         private bool isBottomBanner; //fullscreen apps are fitted above the bottom banners
+
+        //the bottom banner sits right below the taskbar in the z-order, so the Start menu and tray notifications that open over it stay visible
+        [System.Runtime.InteropServices.DllImport("USER32", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern System.IntPtr FindWindow(string lpClassName, string lpWindowName);
+        [System.Runtime.InteropServices.DllImport("USER32")]
+        private static extern int GetWindowLong(System.IntPtr hWnd, int nIndex);
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOPMOST = 0x00000008;
+
+        private System.IntPtr TopmostSlot(bool fullscreen) //where to put the banner in the z-order
+        {
+            if (isBottomBanner && !fullscreen)
+            {
+                System.IntPtr taskbar = FindWindow("Shell_TrayWnd", null);
+                if (taskbar != System.IntPtr.Zero && (GetWindowLong(taskbar, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0) //only when the taskbar is "kept on top", else the banner would lose its topmost spot
+                {
+                    return taskbar;
+                }
+            }
+            return HWND_TOPMOST;
+        }
         //make labels
         private System.Windows.Forms.Label classificationLabel;
         private System.Windows.Forms.Label leftLabel;
@@ -257,7 +278,7 @@ namespace SystemBanner
                     fullscreen = fullscreen || IsForegroundFitted();
                     if (fullscreen || ++topmostTicks >= 20) //take the top spot back right away from a fullscreen app (video, game, slideshow), otherwise check once per second
                     {
-                        SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
+                        SetWindowPos(this.Handle, TopmostSlot(fullscreen), 0, 0, 0, 0, SWP_NOSIZE_NOMOVE_NOACTIVATE);
                         topmostTicks = 0;
                     }
                 }

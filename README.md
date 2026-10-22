@@ -31,9 +31,9 @@ WHAT'S NEW IN THE WINDOWS XP EDITION
 ---------------------------------
 
 - **Windows XP SP3 support.** Retargeted to .NET Framework 4.0 and x86, the newest runtime and the architecture XP supports.
-- **Banner on the logon screen.** The banner is also shown on the secure Winlogon desktop: the logon screen (tested with the classic logon dialog, the Welcome screen uses the same desktop), the locked workstation and the Ctrl+Alt+Del screen, including right after a logoff.
+- **Banner on the logon screen.** The banner is also shown on the secure Winlogon desktop: the logon screen (classic logon dialog and Welcome screen), the locked workstation and the Ctrl+Alt+Del screen, including right after a logoff.
 - **Persistence.** A Windows service restarts the banner within about 3 seconds if a user closes or kills it. Alt+F4 does not close the banner, and Windows restarts the service if it crashes.
-- **Always visible.** The banner is fully opaque and always on top. The transparency and the fading on mouse over and over fullscreen apps were removed.
+- **Always visible.** The banner is fully opaque and always on top. The transparency and the fading on mouse over and over fullscreen apps were removed. The bottom banner sits right below the taskbar in the z-order, so the Start menu and tray notifications that open over it stay readable.
 - **Fullscreen videos stay fully visible.** When an app goes fullscreen (tested with VLC and Firefox), SystemBanner resizes it once to fit between the top and bottom banners, so the banner never hides part of the video.
 - **Live configuration updates.** Classification, text, colors and banner position changes apply in about one second, on the user banner and on the logon screen banner, with no restart.
 - **Troubleshooting.** Crash logs with full stack traces, and two scripts that turn debug logging on and off and gather every log in one folder.
