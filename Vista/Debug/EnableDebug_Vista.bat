@@ -31,7 +31,10 @@ TASKLIST /V /FI "IMAGENAME eq SystemBanner.exe" > "%OUT%\processes.txt"
 QUERY SESSION > "%OUT%\sessions.txt" 2>&1
 REG QUERY "HKLM\SOFTWARE\Policies\SystemBanner" > "%OUT%\settings.txt"
 REM SystemBanner events (ID 1902) from the Application event log, newest first
-WEVTUTIL QE Application /q:"*[System[(EventID=1902)]]" /f:text /rd:true /c:500 > "%OUT%\events.txt"
+WEVTUTIL QE Application /q:"*[System[(EventID=1902)]]" /f:text /rd:true /c:500 > "%OUT%\events.txt" 2>&1
+REM what SystemBanner reads in the registry, as this account
+"%ProgramFiles%\SystemBanner\SystemBanner.exe" /diag
+COPY /Y "%USERPROFILE%\Desktop\SystemBanner_diag.txt" "%OUT%\" 1>NUL 2>NUL
 
 ECHO.
 ECHO [OK] Logs gathered in "%OUT%". Send this folder to whoever is helping you.

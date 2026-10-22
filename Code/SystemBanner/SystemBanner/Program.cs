@@ -59,6 +59,12 @@ namespace SystemBanner
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs e) { LogCrash(e.ExceptionObject); };
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += delegate (object sender, System.Threading.ThreadExceptionEventArgs e) { LogCrash(e.Exception); };
+            //"/diag" writes what SystemBanner sees in the registry to SystemBanner_diag.txt on the Desktop, then quits
+            if (args.Length > 0 && args[0].ToLower() == "/diag")
+            {
+                WriteDiagnostics();
+                return;
+            }
             //"/service" is used by the SystemBanner Windows service (watchdog), see Service.cs
             if (args.Length > 0 && args[0].ToLower() == "/service")
             {
@@ -179,6 +185,51 @@ namespace SystemBanner
             }
         }
         private static string lastRegistrySummary;
+        private static void WriteDiagnostics()
+        {
+            System.Text.StringBuilder report = new System.Text.StringBuilder();
+            report.AppendLine("SystemBanner diagnostics, " + DateTime.Now);
+            report.AppendLine("Windows: " + Environment.OSVersion + ", 64 bit OS: " + Environment.Is64BitOperatingSystem + ", 64 bit process: " + Environment.Is64BitProcess);
+            report.AppendLine(".NET runtime: " + Environment.Version + ", user: " + Environment.UserDomainName + "\\" + Environment.UserName);
+            foreach (RegistryView view in new RegistryView[] { RegistryView.Default, RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                report.AppendLine();
+                report.AppendLine("[" + view + " view] HKLM\\SOFTWARE\\Policies\\SystemBanner");
+                try
+                {
+                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                    using (var key = hklm.OpenSubKey(@"SOFTWARE\Policies\SystemBanner", RegistryKeyPermissionCheck.ReadSubTree))
+                    {
+                        if (key == null)
+                        {
+                            report.AppendLine("  key not found");
+                            continue;
+                        }
+                        foreach (string name in key.GetValueNames())
+                        {
+                            object value = key.GetValue(name);
+                            report.AppendLine("  " + name + " = " + value + " (" + key.GetValueKind(name) + ", " + (value == null ? "null" : value.GetType().Name) + ")");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    report.AppendLine("  ERROR: " + ex);
+                }
+            }
+            report.AppendLine();
+            try
+            {
+                GetRegValues();
+                report.AppendLine("SystemBanner reads: " + lastRegistrySummary + ", DEBUG=" + debug);
+            }
+            catch (Exception ex)
+            {
+                report.AppendLine("SystemBanner read ERROR: " + ex);
+            }
+            string file = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemBanner_diag.txt");
+            System.IO.File.WriteAllText(file, report.ToString());
+        }
         private static bool ReadRegValues(RegistryView view) //true when the SystemBanner key exists in that view
         {
             //grab registry key and see if it exists
