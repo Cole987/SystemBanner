@@ -12,7 +12,7 @@ In addition, custom options implemented in Group Policy which sets relevant Regi
 
 SystemBanner displays the selected message to the user as soon as they are logged into Windows via one or more graphical SystemBanner AppBars. As the user connects to new displays or resizes existing ones, SystemBanner regenerates new SystemBanner AppBars to accommodate those changes.
 
-This fork brings SystemBanner to Windows XP SP3 and Windows Vista SP2 (one x86 executable, .NET Framework 4.0). Windows Vista SP2 support, on 32 and 64 bit, is being tested.
+This fork brings SystemBanner to Windows XP SP3 and Windows Vista SP2 (one x86 executable, .NET Framework 4.0).
 
 --------
 FEATURES
@@ -148,7 +148,7 @@ KNOWN LIMITATIONS
 - Windows Vista: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
-- Tested on Windows XP SP3. Windows Vista SP2 support is being tested. Windows 7 and later have not been tested.
+- Tested on Windows XP SP3 (x86) and Windows Vista SP2 (x86). The same x86 executable is expected to run on Windows Vista SP2 x64, which has not been tested yet. Windows 7 and later have not been tested.
 
 --------
 BUILDING
