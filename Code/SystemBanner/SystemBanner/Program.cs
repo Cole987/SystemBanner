@@ -133,9 +133,7 @@ namespace SystemBanner
             {
                 try
                 {
-                    RegistryView view = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Default;
-                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
-                    using (var policies = hklm.OpenSubKey(@"SOFTWARE\Policies")) //watch the parent, SystemBanner may not exist yet
+                    using (var policies = OpenPoliciesKey()) //watch the parent, SystemBanner may not exist yet
                     using (var changed = new System.Threading.AutoResetEvent(false))
                     {
                         while (policies != null && RegNotifyChangeKeyValue(policies.Handle.DangerousGetHandle(), true, REG_NOTIFY_CHANGE_NAME_AND_LAST_SET, changed.SafeWaitHandle.DangerousGetHandle(), true) == 0)
@@ -156,25 +154,28 @@ namespace SystemBanner
         }
         public static void GetRegValues()
         {
-            //64 bit view only on 64 bit Windows, 32 bit XP must use its default view
-            RegistryView view = Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Default;
             string source = "NO VIEW (SystemBanner key not found)";
-            try
+            bool found = false;
+            foreach (RegistryView view in PolicyViews())
             {
-                if (ReadRegValues(view))
+                try
                 {
-                    source = view + " VIEW";
+                    if (ReadRegValues(view))
+                    {
+                        source = view + " VIEW";
+                        found = true;
+                        break;
+                    }
                 }
-                else if (Environment.Is64BitOperatingSystem && ReadRegValues(RegistryView.Registry32)) //64 bit Windows: the settings may also sit in the 32 bit view (Wow6432Node)
+                catch (System.Security.SecurityException) //access denied in that view, try the next one
                 {
-                    source = "Registry32 VIEW (Wow6432Node)";
+                    source = "NO VIEW (access denied in " + view + " view)";
                 }
             }
-            catch (System.Security.SecurityException) //access denied on the policy key, show unconfigured instead of crashing
+            if (!found) //show unconfigured instead of crashing or keeping half read values
             {
                 bannerColor = simpleBannerColors[0];
                 bannerText = simpleBannerTexts[0];
-                source = "NO VIEW (access denied)";
             }
             //log where the settings come from, only when it changes (this runs every 5 sec)
             string summary = "REGISTRY: SETTINGS FROM " + source + ", TEXT=" + bannerText + ", COLORS=" + string.Join(",", bannerColor) + ", TOPANDBOTTOM=" + bannerTopAndBottom;
@@ -185,6 +186,32 @@ namespace SystemBanner
             }
         }
         private static string lastRegistrySummary;
+        //registry views to look for the policy key, in order: the default view first (Vista x64 refuses the explicit
+        //64/32 bit views on HKLM\SOFTWARE\Policies with "access denied" while its default view sees the key), then on
+        //64 bit Windows the explicit views, in case the default view of this 32 bit process is redirected to Wow6432Node
+        private static RegistryView[] PolicyViews()
+        {
+            return Environment.Is64BitOperatingSystem ? new RegistryView[] { RegistryView.Default, RegistryView.Registry64, RegistryView.Registry32 } : new RegistryView[] { RegistryView.Default };
+        }
+        private static RegistryKey OpenPoliciesKey() //HKLM\SOFTWARE\Policies in the first view that lets us open it, or null
+        {
+            foreach (RegistryView view in PolicyViews())
+            {
+                try
+                {
+                    RegistryKey policies = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view).OpenSubKey(@"SOFTWARE\Policies");
+                    if (policies != null)
+                    {
+                        return policies;
+                    }
+                }
+                catch (System.Security.SecurityException)
+                {
+                    //access denied in that view, try the next one
+                }
+            }
+            return null;
+        }
         private static void WriteDiagnostics()
         {
             System.Text.StringBuilder report = new System.Text.StringBuilder();
