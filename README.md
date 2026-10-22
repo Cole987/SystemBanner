@@ -36,6 +36,18 @@ Windows Vista logon screen, and UAC consent prompt (the banner is also shown on 
 ![Alt text](Docs/Images/Vista_Logon_Screenshot.png?raw=true)
 ![Alt text](Docs/Images/Vista_UAC_Screenshot.png?raw=true)
 
+Windows Vista on three screens, with a top and a bottom banner on each screen:
+
+![Alt text](Docs/Images/Vista_TripleScreen_Screenshot.png?raw=true)
+
+Windows 7 locked computer:
+
+![Alt text](Docs/Images/Win7_Logon_Screenshot.png?raw=true)
+
+Windows 2000 startup, before the logon dialog (the banner is already shown on the secure desktop):
+
+![Alt text](Docs/Images/Win2000_Logon_Screenshot.png?raw=true)
+
 *Fullscreen screenshot: Big Buck Bunny, (c) copyright 2008, Blender Foundation, www.bigbuckbunny.org, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).*
 
 -----------------
