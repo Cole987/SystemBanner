@@ -135,6 +135,8 @@ Use the scripts in `XP\Debug` or `Vista\Debug`, as an administrator (on Vista, r
 3. The script gathers every log in a `SystemBanner_logs` folder on the Desktop: crash and debug logs, service state, running SystemBanner processes, current settings and SystemBanner events (and the session list on Vista).
 4. Run `DisableDebug_XP.bat` or `DisableDebug_Vista.bat` when you are done.
 
+If the banner does not show the configured classification, run `"C:\Program Files\SystemBanner\SystemBanner.exe" /diag` from a normal (not elevated) command prompt. It writes `SystemBanner_diag.txt` on the Desktop: Windows and .NET versions, process bitness, account, the SystemBanner values seen in each registry view (or the exact error), and what SystemBanner ends up reading. The Vista debug script runs it too.
+
 Log locations, if you need them by hand:
 
 - **Event Viewer**, Application log, Source `Application`, Event ID 1902, when `Debug` is 1. The "description cannot be found" text in each event is expected, the useful information follows it.
@@ -153,7 +155,7 @@ KNOWN LIMITATIONS
 - Windows Vista: the UAC consent prompt uses the same secure desktop as the logon screen, so the banner is shown on it too.
 - An administrator can stop the service and remove SystemBanner. Standard users cannot.
 - The XP scripts use `taskkill` and `eventquery.vbs`, which are not available on Windows XP Home.
-- Tested on Windows XP SP3 (x86) and Windows Vista SP2 (x86). The same x86 executable is expected to run on Windows Vista SP2 x64, which has not been tested yet. Windows 7 and later have not been tested.
+- Tested on Windows XP SP3 (x86), Windows Vista SP2 (x86) and Windows Vista SP2 (x64), including three screens, a standard user account, Fast User Switching on Vista and removal. Windows 7 and later have not been tested.
 
 --------
 BUILDING
