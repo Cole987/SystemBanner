@@ -33,6 +33,17 @@ FEATURES
 
 *Fullscreen screenshot: Big Buck Bunny, (c) copyright 2008, Blender Foundation, www.bigbuckbunny.org, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).*
 
+-----------------
+REPOSITORY LAYOUT
+-----------------
+
+| Folder | Content |
+|---|---|
+| `XP/` | Everything needed on a Windows XP computer: binaries, install and removal scripts, Group Policy template, debug scripts. |
+| `Code/` | Source code (Visual Studio solution). |
+| `Docs/` | Screenshots used in this README. |
+| `Original/` | The original SystemBanner 1.1 files (Windows 10/11 MSI, scripts, ADMX templates), kept for reference. They do not include the features of this fork. |
+
 ------------
 INSTALLATION
 ------------
@@ -42,8 +53,6 @@ Requirements: Windows XP Professional SP3 (x86), .NET Framework 4.0, an administ
 1. Copy the whole `XP` folder to the computer.
 2. Run `XP\InstallSystemBanner_XP.bat` as an administrator.
 3. The installer ends with `[OK] The SystemBanner service is running`. Lock the session with Win+L to see the logon screen banner.
-
-Use the files in the `XP` folder only. The other installers at the repository root (`SystemBannerSetup.msi`, `InstallSystemBanner.bat`) come from the original project and do not include these features.
 
 The installer:
 
