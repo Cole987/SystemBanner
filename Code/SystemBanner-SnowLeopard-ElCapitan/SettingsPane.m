@@ -126,6 +126,7 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     NSColorWell *backgroundWell;
     NSColorWell *textWell;
     NSButton *topAndBottomBox;
+    NSButton *arrangeBox;
     NSButton *debugBox;
     SystemBannerPreviewView *preview;
     NSTextField *status;
@@ -141,10 +142,10 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
 - (NSView *)loadMainView
 {
     //built in code, no nib, like the rest of SystemBanner
-    NSView *view = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 668, 330)] autorelease];
+    NSView *view = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 668, 354)] autorelease];
 
-    [view addSubview:Label(@"Classification:", NSMakeRect(20, 285, 115, 17))];
-    classification = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(137, 278, 345, 26) pullsDown:NO] autorelease];
+    [view addSubview:Label(@"Classification:", NSMakeRect(20, 309, 115, 17))];
+    classification = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(137, 302, 345, 26) pullsDown:NO] autorelease];
     [classification addItemWithTitle:@"Not configured"];
     NSString *system = nil;
     for (int i = 0; i < presetCount; i++)
@@ -169,16 +170,16 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     [classification setAction:@selector(classificationChanged:)];
     [view addSubview:classification];
 
-    [view addSubview:Label(@"Text:", NSMakeRect(20, 250, 115, 17))];
-    textField = [[[NSTextField alloc] initWithFrame:NSMakeRect(140, 247, 508, 22)] autorelease];
+    [view addSubview:Label(@"Text:", NSMakeRect(20, 274, 115, 17))];
+    textField = [[[NSTextField alloc] initWithFrame:NSMakeRect(140, 271, 508, 22)] autorelease];
     [textField setDelegate:self];
     [view addSubview:textField];
 
-    [view addSubview:Label(@"Background:", NSMakeRect(20, 215, 115, 17))];
-    backgroundWell = [[[NSColorWell alloc] initWithFrame:NSMakeRect(140, 209, 52, 28)] autorelease];
+    [view addSubview:Label(@"Background:", NSMakeRect(20, 239, 115, 17))];
+    backgroundWell = [[[NSColorWell alloc] initWithFrame:NSMakeRect(140, 233, 52, 28)] autorelease];
     [view addSubview:backgroundWell];
-    [view addSubview:Label(@"Text color:", NSMakeRect(230, 215, 80, 17))];
-    textWell = [[[NSColorWell alloc] initWithFrame:NSMakeRect(310, 209, 52, 28)] autorelease];
+    [view addSubview:Label(@"Text color:", NSMakeRect(230, 239, 80, 17))];
+    textWell = [[[NSColorWell alloc] initWithFrame:NSMakeRect(310, 233, 52, 28)] autorelease];
     [view addSubview:textWell];
     for (NSColorWell *well in [NSArray arrayWithObjects:backgroundWell, textWell, nil])
     {
@@ -186,8 +187,10 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
         [well setAction:@selector(updatePreview:)];
     }
 
-    topAndBottomBox = Checkbox(@"Show a banner at the top and at the bottom of each screen", NSMakeRect(18, 175, 600, 18));
+    topAndBottomBox = Checkbox(@"Show a banner at the top and at the bottom of each screen", NSMakeRect(18, 199, 600, 18));
     [view addSubview:topAndBottomBox];
+    arrangeBox = Checkbox(@"Keep windows out from under the banners (needs Accessibility access)", NSMakeRect(18, 175, 630, 18));
+    [view addSubview:arrangeBox];
     debugBox = Checkbox(@"Debug logging (Console)", NSMakeRect(18, 151, 600, 18));
     [view addSubview:debugBox];
 
@@ -249,6 +252,7 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     [backgroundWell setEnabled:editable && custom];
     [textWell setEnabled:editable && custom];
     [topAndBottomBox setEnabled:editable];
+    [arrangeBox setEnabled:editable];
     [debugBox setEnabled:editable];
     [revertButton setEnabled:editable];
     [applyButton setEnabled:editable];
@@ -295,6 +299,7 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     [backgroundWell setColor:ColorFromBytes(bannerColor)];
     [textWell setColor:ColorFromBytes(bannerColor + 3)];
     [topAndBottomBox setState:bannerTopAndBottom ? NSOnState : NSOffState];
+    [arrangeBox setState:arrangeWindows ? NSOnState : NSOffState];
     [debugBox setState:debug ? NSOnState : NSOffState];
     managed = PrefsAreManaged();
     [self classificationChanged:nil];
@@ -406,6 +411,7 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     }
     [writes addObject:[NSArray arrayWithObjects:@"TopAndBottom", @"-int", [topAndBottomBox state] == NSOnState ? @"1" : @"0", nil]];
     [writes addObject:[NSArray arrayWithObjects:@"Debug", @"-int", [debugBox state] == NSOnState ? @"1" : @"0", nil]];
+    [writes addObject:[NSArray arrayWithObjects:@"ArrangeWindows", @"-int", [arrangeBox state] == NSOnState ? @"1" : @"0", nil]];
     for (NSString *key in deletes)
     {
         RunAsRoot(authorization, "/usr/bin/defaults", [NSArray arrayWithObjects:@"delete", PREF_FILE, key, nil]); //fails harmlessly when the key is not set

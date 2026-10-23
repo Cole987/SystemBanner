@@ -25,6 +25,7 @@ NSString *PresetTitle(const Preset *preset); //"France – SECRET", for the sett
 
 extern BOOL debug;
 extern BOOL bannerTopAndBottom;
+extern BOOL arrangeWindows; //move the windows of other apps out from under the banners (needs Accessibility access)
 extern int bannerColor[6];
 extern NSString *bannerText;
 extern NSString *lastPrefSummary;

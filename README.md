@@ -19,6 +19,7 @@ CONTENTS
 - **Mac OS X and macOS** ([overview and tested Macs](#mac-os-x-and-macos))
   - [Installation](#installation-1)
   - [Administration](#administration-1)
+  - [Keeping windows out from under the banners](#keeping-windows-out-from-under-the-banners)
   - [Differences with the Windows version](#differences-with-the-windows-version)
   - [Building](#building)
 - [Classification systems](#classification-systems): France, Germany, United Kingdom, NATO, United Nations
@@ -95,6 +96,7 @@ MACOS FEATURES
 - **Persistence.** launchd restarts the banner within about 3 seconds if a user quits or kills it. It is a banner, it does not take a hint.
 - **Always visible, never in the way.** The banner is opaque and stays over every window. Clicks go through it. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.
 - **Fullscreen apps.** When an app covers a whole screen, the banners move to the screen edges and stay visible over it.
+- **Windows kept out from under the banners (optional).** macOS has no AppBars, so SystemBanner can move and shorten the windows of other apps that slip under a banner, once the mouse is released, like window managers do. It needs the Accessibility access, and is off by default, see [Keeping windows out from under the banners](#keeping-windows-out-from-under-the-banners).
 - **Settings for administrators only.** A System Preferences pane with the standard lock on Mac OS X 10.6 to 10.11, the SystemBanner Settings app on macOS 10.12 and later, both with a live preview. A configuration profile can also set SystemBanner, like Group Policy on Windows.
 - **Live configuration updates.** Classification, text, colors and banner position changes apply in about one second, with no restart.
 - **Troubleshooting.** `--diag` prints what SystemBanner reads, and the `Debug` setting logs to Console.app.
@@ -312,7 +314,7 @@ To remove it, run the folder's removal script, for example `sudo ./RemoveSystemB
 
 ### Administration
 
-SystemBanner reads the preferences domain `com.systembanner`, with the same keys as the Windows registry values (`Simple`, `0` to `5`, `Text`, `TopAndBottom`, `Debug`). Only computer wide settings count, a user cannot override them in their own preferences.
+SystemBanner reads the preferences domain `com.systembanner`, with the same keys as the Windows registry values (`Simple`, `0` to `5`, `Text`, `TopAndBottom`, `Debug`), plus `ArrangeWindows`, Mac only (1 keeps windows out from under the banners). Only computer wide settings count, a user cannot override them in their own preferences.
 
 - On one Mac: System Preferences > SystemBanner (10.6 to 10.11), or Applications > Utilities > SystemBanner Settings (10.12 and later).
 - On many Macs (10.7 and later): edit and deploy `Configuration/SystemBanner.mobileconfig` with your MDM (Jamf, Intune, Workspace ONE, etc.), or install it with the Profiles preference pane. This is the counterpart of Group Policy, and it overrides the local settings.
@@ -320,9 +322,20 @@ SystemBanner reads the preferences domain `com.systembanner`, with the same keys
 
 Changes apply within about one second. `SystemBanner.app/Contents/MacOS/SystemBanner --diag` prints what SystemBanner sees. With `Debug` set to 1, SystemBanner logs to Console.app.
 
+### Keeping windows out from under the banners
+
+macOS gives no way to reserve a band of the screen, so other apps can put their windows under the banners. With `ArrangeWindows` set to 1 (the "Keep windows out from under the banners" box of the settings), SystemBanner moves a window that slips under the top banner right below it, and shortens a window that runs under the bottom banner so it ends right above it, keeping the room between the banners. It only acts once the mouse button is released, never while a window is being dragged, leaves fullscreen apps alone, and does not try again a window its app refuses to move.
+
+Moving the windows of other apps needs the Accessibility access:
+
+- Mac OS X 10.6 to OS X 10.8: System Preferences > Universal Access > "Enable access for assistive devices".
+- OS X 10.9 and later: macOS asks for it the first time the banner needs it. Allow SystemBanner in System Preferences > Security & Privacy > Privacy > Accessibility (System Settings > Privacy & Security > Accessibility on recent versions).
+
+SystemBanner is signed ad hoc, so macOS ties this access to the exact build: after an update of SystemBanner, remove it from the Accessibility list and allow it again. Without the access, the banners work as before and windows can slip under them.
+
 ### Differences with the Windows version
 
-- **No reserved screen space.** macOS has no AppBars: the top banner sits right below the menu bar and the bottom banner right above the Dock, over other windows. Clicks go through the banner, so a title bar under it can still be dragged. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.
+- **No reserved screen space.** macOS has no AppBars: the top banner sits right below the menu bar and the bottom banner right above the Dock, over other windows. Clicks go through the banner, so a title bar under it can still be dragged. The optional `ArrangeWindows` setting moves the windows that slip under a banner, see below. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.
 - **Fullscreen apps are not resized.** When an app covers a whole screen, the banners move to the screen edges and stay over it, but they cover the top and bottom of the app, since resizing other apps would need the Accessibility permission.
 - **Login window.** The login window banner uses launchd's pre-login agents. The top banner sits below the strip of status icons (battery, Wi-Fi, user switching) of the main screen. It works on every version tested, see the table above.
 - Gatekeeper: the apps are signed ad hoc, not notarized. The installer removes the quarantine flag so they run on recent macOS.

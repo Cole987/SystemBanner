@@ -1,6 +1,7 @@
 //Copyright (c) 2023, Aaron Wawrzyniak. MIT License Applies.
 //Mac OS X 10.6 Snow Leopard to 10.11 El Capitan port: Copyright (c) 2026, Cole. MIT License Applies.
 //Objective-C with manual retain/release on purpose: Swift and ARC cannot target Snow Leopard with today's Xcode.
+#import <dlfcn.h>
 #import "Shared.h"
 
 //true for the login window banner, started by the LoginWindow launchd agent (the macOS counterpart of /winlogon)
@@ -56,6 +57,142 @@ static NSRect BannerFrame(NSScreen *screen, BOOL bottom, BOOL fullscreen)
     }
     CGFloat height = BannerHeight(screen);
     return NSMakeRect(NSMinX(frame), bottom ? NSMinY(area) : NSMaxY(area) - height, NSWidth(frame), height);
+}
+
+//Accessibility access, needed to move the windows of other apps: on 10.9 and later the app itself is allowed in
+//Security & Privacy (the system prompt is shown once per launch), before that "Enable access for assistive devices"
+static BOOL AccessibilityAllowed(void)
+{
+    static BOOL prompted = NO;
+    //looked up at run time, the function does not exist before 10.9
+    Boolean (*trustedWithOptions)(CFDictionaryRef) = (Boolean (*)(CFDictionaryRef))dlsym(RTLD_DEFAULT, "AXIsProcessTrustedWithOptions");
+    if (trustedWithOptions != NULL)
+    {
+        //"AXTrustedCheckOptionPrompt" is the value of kAXTrustedCheckOptionPrompt, also 10.9 only
+        NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:!prompted] forKey:@"AXTrustedCheckOptionPrompt"];
+        prompted = YES;
+        return trustedWithOptions((CFDictionaryRef)options);
+    }
+    return AXAPIEnabled() || AXIsProcessTrusted();
+}
+
+//the Accessibility element of a window of pid, found by its frame: the Accessibility API has no window numbers
+static AXUIElementRef CopyWindowElement(pid_t pid, CGRect frame)
+{
+    AXUIElementRef app = AXUIElementCreateApplication(pid);
+    CFArrayRef windows = NULL;
+    AXUIElementRef found = NULL;
+    if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute, (CFTypeRef *)&windows) == kAXErrorSuccess && windows != NULL)
+    {
+        for (CFIndex i = 0; i < CFArrayGetCount(windows) && found == NULL; i++)
+        {
+            AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windows, i);
+            CFTypeRef position = NULL;
+            CFTypeRef size = NULL;
+            CGPoint origin;
+            CGSize extent;
+            if (AXUIElementCopyAttributeValue(window, kAXPositionAttribute, &position) == kAXErrorSuccess
+                && AXUIElementCopyAttributeValue(window, kAXSizeAttribute, &size) == kAXErrorSuccess
+                && AXValueGetValue((AXValueRef)position, kAXValueCGPointType, &origin) && AXValueGetValue((AXValueRef)size, kAXValueCGSizeType, &extent)
+                && fabs(origin.x - frame.origin.x) < 1 && fabs(origin.y - frame.origin.y) < 1
+                && fabs(extent.width - frame.size.width) < 1 && fabs(extent.height - frame.size.height) < 1)
+            {
+                found = (AXUIElementRef)CFRetain(window);
+            }
+            if (position != NULL)
+            {
+                CFRelease(position);
+            }
+            if (size != NULL)
+            {
+                CFRelease(size);
+            }
+        }
+        CFRelease(windows);
+    }
+    CFRelease(app);
+    return found;
+}
+
+//frames of windows already moved or that could not be moved, not tried again until the mouse is used
+static NSMutableSet *triedWindows;
+
+//moves the windows of other apps out from under the banners, the counterpart of the AppBars of Windows;
+//rooms: for each screen without a fullscreen app, the room between its banners, screens: the screen itself,
+//both in window list coordinates (top left of the main screen)
+static void ArrangeWindows(NSArray *rooms, NSArray *screens)
+{
+    if (triedWindows == nil)
+    {
+        triedWindows = [[NSMutableSet alloc] init];
+    }
+    if ([NSEvent pressedMouseButtons] != 0)
+    {
+        //never fight a window being dragged or resized, and try every window again once the mouse is released
+        [triedWindows removeAllObjects];
+        return;
+    }
+    if ([rooms count] == 0 || !AccessibilityAllowed())
+    {
+        return;
+    }
+    CFArrayRef windows = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+    if (windows == NULL)
+    {
+        return;
+    }
+    int ownPid = [[NSProcessInfo processInfo] processIdentifier];
+    for (NSDictionary *info in (NSArray *)windows)
+    {
+        int pid = [[info objectForKey:(id)kCGWindowOwnerPID] intValue];
+        CGRect bounds;
+        //only the normal windows of other apps
+        if ([[info objectForKey:(id)kCGWindowLayer] intValue] != 0 || pid == ownPid
+            || !CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)[info objectForKey:(id)kCGWindowBounds], &bounds))
+        {
+            continue;
+        }
+        for (NSUInteger i = 0; i < [rooms count]; i++)
+        {
+            CGRect screen = NSRectToCGRect([[screens objectAtIndex:i] rectValue]);
+            if (!CGRectContainsPoint(screen, CGPointMake(CGRectGetMidX(bounds), CGRectGetMidY(bounds))))
+            {
+                continue;
+            }
+            CGRect room = NSRectToCGRect([[rooms objectAtIndex:i] rectValue]);
+            BOOL underTop = CGRectGetMinY(bounds) < CGRectGetMinY(room) - 0.5;
+            BOOL underBottom = bannerTopAndBottom && CGRectGetMaxY(bounds) > CGRectGetMaxY(room) + 0.5;
+            NSString *key = [NSString stringWithFormat:@"%d %@", pid, NSStringFromRect(NSRectFromCGRect(bounds))];
+            if ((underTop || underBottom) && ![triedWindows containsObject:key])
+            {
+                [triedWindows addObject:key];
+                //below the top banner, and shortened to end above the bottom banner, unless that leaves it too small to use
+                CGRect target = bounds;
+                target.origin.y = MAX(CGRectGetMinY(bounds), CGRectGetMinY(room));
+                if (CGRectGetMaxY(target) > CGRectGetMaxY(room) && CGRectGetMaxY(room) - target.origin.y >= 100)
+                {
+                    target.size.height = CGRectGetMaxY(room) - target.origin.y;
+                }
+                AXUIElementRef window = CopyWindowElement(pid, bounds);
+                if (window != NULL)
+                {
+                    AXValueRef size = AXValueCreate(kAXValueCGSizeType, &target.size);
+                    AXValueRef position = AXValueCreate(kAXValueCGPointType, &target.origin);
+                    //size first, so the window fits where it moves, then again in case the move limited it
+                    AXUIElementSetAttributeValue(window, kAXSizeAttribute, size);
+                    AXUIElementSetAttributeValue(window, kAXPositionAttribute, position);
+                    AXUIElementSetAttributeValue(window, kAXSizeAttribute, size);
+                    CFRelease(size);
+                    CFRelease(position);
+                    CFRelease(window);
+                    LogString([NSString stringWithFormat:@"ARRANGED %@ (%d) FROM %@ TO %@", [info objectForKey:(id)kCGWindowOwnerName], pid,
+                        NSStringFromRect(NSRectFromCGRect(bounds)), NSStringFromRect(NSRectFromCGRect(target))]);
+                }
+            }
+            break;
+        }
+    }
+    CFRelease(windows);
 }
 
 @interface BannerView : NSView
@@ -163,15 +300,27 @@ static NSRect BannerFrame(NSScreen *screen, BOOL bottom, BOOL fullscreen)
     ReadPrefs();
     //everything the banners depend on: settings, screens, menu bar, Dock and fullscreen apps
     NSMutableArray *frames = [NSMutableArray array];
+    NSMutableArray *rooms = [NSMutableArray array]; //for ArrangeWindows, in window list coordinates
+    NSMutableArray *roomScreens = [NSMutableArray array];
     NSArray *screens = [NSScreen screens];
+    CGFloat mainHeight = NSHeight([[screens objectAtIndex:0] frame]);
     for (NSUInteger i = 0; i < [screens count]; i++)
     {
         NSScreen *screen = [screens objectAtIndex:i];
         BOOL fullscreen = !loginWindow && ScreenHasFullscreenApp(screen);
-        [frames addObject:[NSValue valueWithRect:BannerFrame(screen, NO, fullscreen)]];
+        NSRect top = BannerFrame(screen, NO, fullscreen);
+        [frames addObject:[NSValue valueWithRect:top]];
         if (bannerTopAndBottom)
         {
             [frames addObject:[NSValue valueWithRect:BannerFrame(screen, YES, fullscreen)]];
+        }
+        if (arrangeWindows && !loginWindow && !fullscreen)
+        {
+            //the room between the banners, or between the top banner and the Dock
+            NSRect frame = [screen frame];
+            CGFloat bottom = bannerTopAndBottom ? NSMaxY(BannerFrame(screen, YES, NO)) : NSMinY([screen visibleFrame]);
+            [rooms addObject:[NSValue valueWithRect:NSMakeRect(NSMinX(frame), mainHeight - NSMinY(top), NSWidth(frame), NSMinY(top) - bottom)]];
+            [roomScreens addObject:[NSValue valueWithRect:NSMakeRect(NSMinX(frame), mainHeight - NSMaxY(frame), NSWidth(frame), NSHeight(frame))]];
         }
     }
     NSString *newLayout = [NSString stringWithFormat:@"%@ %d %@", lastPrefSummary, debug, frames];
@@ -187,6 +336,10 @@ static NSRect BannerFrame(NSScreen *screen, BOOL bottom, BOOL fullscreen)
         }
     }
     //no periodic reordering: the few windows sharing a banner's level, like Spotlight on Snow Leopard, must stay over it while open
+    if (arrangeWindows && !loginWindow)
+    {
+        ArrangeWindows(rooms, roomScreens);
+    }
     [pool release];
 }
 @end
@@ -198,7 +351,7 @@ static void WriteDiagnostics(void)
     [report appendFormat:@"SystemBanner diagnostics, %@\n", [NSDate date]];
     [report appendFormat:@"macOS: %@, user: %@\n\n", [[NSProcessInfo processInfo] operatingSystemVersionString], NSUserName()];
     [report appendFormat:@"[%@]\n", PREF_DOMAIN];
-    NSArray *keys = [NSArray arrayWithObjects:@"Simple", @"0", @"1", @"2", @"3", @"4", @"5", @"Text", @"TopAndBottom", @"Debug", nil];
+    NSArray *keys = [NSArray arrayWithObjects:@"Simple", @"0", @"1", @"2", @"3", @"4", @"5", @"Text", @"TopAndBottom", @"Debug", @"ArrangeWindows", nil];
     for (NSString *key in keys)
     {
         id value = PrefValue(key);

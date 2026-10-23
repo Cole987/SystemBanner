@@ -64,6 +64,7 @@ NSString *PresetTitle(const Preset *preset)
 
 BOOL debug;
 BOOL bannerTopAndBottom;
+BOOL arrangeWindows;
 int bannerColor[6];
 NSString *bannerText;
 NSString *lastPrefSummary;
@@ -112,7 +113,7 @@ BOOL PrefInt(NSString *key, int *result)
 //true when a configuration profile or MCX sets SystemBanner, /Library/Preferences is then ignored
 BOOL PrefsAreManaged(void)
 {
-    NSArray *keys = [NSArray arrayWithObjects:@"Simple", @"0", @"1", @"2", @"3", @"4", @"5", @"Text", @"TopAndBottom", @"Debug", nil];
+    NSArray *keys = [NSArray arrayWithObjects:@"Simple", @"0", @"1", @"2", @"3", @"4", @"5", @"Text", @"TopAndBottom", @"Debug", @"ArrangeWindows", nil];
     for (NSString *key in keys)
     {
         if (CFPreferencesAppValueIsForced((CFStringRef)key, PREF_DOMAIN))
@@ -132,6 +133,7 @@ void ReadPrefs(void)
     memcpy(bannerColor, unconfiguredColors, sizeof(bannerColor));
     NSString *text = unconfiguredText;
     bannerTopAndBottom = NO;
+    arrangeWindows = NO;
     debug = NO;
     int value;
     for (int i = 0; i < 6; i++)
@@ -161,6 +163,10 @@ void ReadPrefs(void)
     {
         bannerTopAndBottom = YES;
     }
+    if (PrefInt(@"ArrangeWindows", &value) && value == 1)
+    {
+        arrangeWindows = YES;
+    }
     CFRetain(text);
     if (bannerText != nil)
     {
@@ -168,8 +174,8 @@ void ReadPrefs(void)
     }
     bannerText = text;
     //log the settings only when they change (the banner reads them every second)
-    NSString *summary = [NSString stringWithFormat:@"PREFERENCES: TEXT=%@, COLORS=%d,%d,%d,%d,%d,%d, TOPANDBOTTOM=%d", bannerText,
-        bannerColor[0], bannerColor[1], bannerColor[2], bannerColor[3], bannerColor[4], bannerColor[5], bannerTopAndBottom];
+    NSString *summary = [NSString stringWithFormat:@"PREFERENCES: TEXT=%@, COLORS=%d,%d,%d,%d,%d,%d, TOPANDBOTTOM=%d, ARRANGEWINDOWS=%d", bannerText,
+        bannerColor[0], bannerColor[1], bannerColor[2], bannerColor[3], bannerColor[4], bannerColor[5], bannerTopAndBottom, arrangeWindows];
     if (![summary isEqualToString:lastPrefSummary])
     {
         CFRetain(summary);

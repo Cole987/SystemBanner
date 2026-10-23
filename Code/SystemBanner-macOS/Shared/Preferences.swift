@@ -6,7 +6,7 @@ import Cocoa
 //the preferences domain, the macOS counterpart of HKLM\SOFTWARE\Policies\SystemBanner
 let prefDomain = "com.systembanner" as CFString
 let prefFile = "/Library/Preferences/com.systembanner"
-let prefKeys = ["Simple", "0", "1", "2", "3", "4", "5", "Text", "TopAndBottom", "Debug"]
+let prefKeys = ["Simple", "0", "1", "2", "3", "4", "5", "Text", "TopAndBottom", "Debug", "ArrangeWindows"]
 
 //a stock classification, chosen with the Simple setting
 struct Preset {
@@ -68,10 +68,11 @@ struct BannerSettings: Equatable {
     var colors = unconfiguredColors
     var text = unconfiguredText
     var topAndBottom = false
+    var arrangeWindows = false //move the windows of other apps out from under the banners (needs Accessibility access)
     var debug = false
 
     var summary: String {
-        return "PREFERENCES: TEXT=\(text), COLORS=\(colors.map { String($0) }.joined(separator: ",")), TOPANDBOTTOM=\(topAndBottom)"
+        return "PREFERENCES: TEXT=\(text), COLORS=\(colors.map { String($0) }.joined(separator: ",")), TOPANDBOTTOM=\(topAndBottom), ARRANGEWINDOWS=\(arrangeWindows)"
     }
     var background: NSColor { return sRGBColor(colors, 0) }
     var foreground: NSColor { return sRGBColor(colors, 3) }
@@ -127,6 +128,7 @@ func readSettings() -> BannerSettings {
     }
     settings.debug = prefInt("Debug") == 1
     settings.topAndBottom = prefInt("TopAndBottom") == 1
+    settings.arrangeWindows = prefInt("ArrangeWindows") == 1
     return settings
 }
 

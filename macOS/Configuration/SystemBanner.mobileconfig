@@ -9,7 +9,8 @@
        United Kingdom: 31 OFFICIAL, 32 OFFICIAL-SENSITIVE, 33 SECRET, 34 TOP SECRET,
        NATO: 41 NATO UNCLASSIFIED, 42 NATO RESTRICTED, 43 NATO CONFIDENTIAL, 44 NATO SECRET, 45 COSMIC TOP SECRET,
        United Nations: 51 UN CONFIDENTIAL, 52 UN STRICTLY CONFIDENTIAL.
-     Custom settings instead of Simple: "0" "1" "2" background red green blue, "3" "4" "5" text red green blue (0-255), "Text". -->
+     Custom settings instead of Simple: "0" "1" "2" background red green blue, "3" "4" "5" text red green blue (0-255), "Text".
+     ArrangeWindows: 1 moves the windows of other apps out from under the banners, needs the Accessibility access (see README). -->
 <plist version="1.0">
 <dict>
 	<key>PayloadContent</key>
@@ -29,6 +30,8 @@
 								<key>TopAndBottom</key>
 								<integer>0</integer>
 								<key>Debug</key>
+								<integer>0</integer>
+								<key>ArrangeWindows</key>
 								<integer>0</integer>
 							</dict>
 						</dict>

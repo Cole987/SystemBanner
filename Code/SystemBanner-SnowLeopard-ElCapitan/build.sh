@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 OUT=../../SnowLeopard-ElCapitan/Binaries
-FLAGS="-arch x86_64 -mmacosx-version-min=10.6 -O2 -Wall -Wunguarded-availability -fno-objc-arc -framework Cocoa"
+FLAGS="-arch x86_64 -mmacosx-version-min=10.6 -O2 -Wall -Wunguarded-availability -fno-objc-arc -framework Cocoa -framework ApplicationServices"
 
 # System Preferences of 10.6 and 10.7 is 64 bit with garbage collection, and reopens in 32 bit for a pane that does not support it,
 # which then fails since there is no i386 code. Today's compilers dropped -fobjc-gc: set the "supports garbage collection"

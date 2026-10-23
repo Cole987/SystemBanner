@@ -41,14 +41,15 @@ final class PreviewView: NSView {
 }
 
 final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDelegate {
-    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 300), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-    let classification = NSPopUpButton(frame: NSRect(x: 137, y: 245, width: 345, height: 26), pullsDown: false)
-    let textField = NSTextField(frame: NSRect(x: 140, y: 214, width: 340, height: 22))
-    let backgroundWell = NSColorWell(frame: NSRect(x: 140, y: 176, width: 52, height: 28))
-    let textWell = NSColorWell(frame: NSRect(x: 310, y: 176, width: 52, height: 28))
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 324), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+    let classification = NSPopUpButton(frame: NSRect(x: 137, y: 269, width: 345, height: 26), pullsDown: false)
+    let textField = NSTextField(frame: NSRect(x: 140, y: 238, width: 360, height: 22))
+    let backgroundWell = NSColorWell(frame: NSRect(x: 140, y: 200, width: 52, height: 28))
+    let textWell = NSColorWell(frame: NSRect(x: 310, y: 200, width: 52, height: 28))
     let topAndBottomBox = NSButton(checkboxWithTitle: "Show a banner at the top and at the bottom of each screen", target: nil, action: nil)
+    let arrangeBox = NSButton(checkboxWithTitle: "Keep windows out from under the banners (needs Accessibility access)", target: nil, action: nil)
     let debugBox = NSButton(checkboxWithTitle: "Debug logging (Console)", target: nil, action: nil)
-    let preview = PreviewView(frame: NSRect(x: 20, y: 80, width: 460, height: 25))
+    let preview = PreviewView(frame: NSRect(x: 20, y: 80, width: 480, height: 25))
     let status = NSTextField(labelWithString: "")
     let applyButton = NSButton(title: "Apply", target: nil, action: nil)
 
@@ -84,7 +85,7 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
         guard let content = window.contentView else {
             return
         }
-        content.addSubview(label("Classification:", NSRect(x: 20, y: 252, width: 115, height: 17)))
+        content.addSubview(label("Classification:", NSRect(x: 20, y: 276, width: 115, height: 17)))
         classification.addItem(withTitle: "Not configured")
         var system: String?
         for stock in presets {
@@ -103,31 +104,33 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
         classification.action = #selector(classificationChanged)
         content.addSubview(classification)
 
-        content.addSubview(label("Text:", NSRect(x: 20, y: 217, width: 115, height: 17)))
+        content.addSubview(label("Text:", NSRect(x: 20, y: 241, width: 115, height: 17)))
         textField.delegate = self
         content.addSubview(textField)
 
-        content.addSubview(label("Background:", NSRect(x: 20, y: 182, width: 115, height: 17)))
+        content.addSubview(label("Background:", NSRect(x: 20, y: 206, width: 115, height: 17)))
         content.addSubview(backgroundWell)
-        content.addSubview(label("Text color:", NSRect(x: 230, y: 182, width: 80, height: 17)))
+        content.addSubview(label("Text color:", NSRect(x: 230, y: 206, width: 80, height: 17)))
         content.addSubview(textWell)
         for well in [backgroundWell, textWell] {
             well.target = self
             well.action = #selector(updatePreview)
         }
 
-        topAndBottomBox.frame = NSRect(x: 18, y: 142, width: 460, height: 18)
+        topAndBottomBox.frame = NSRect(x: 18, y: 166, width: 480, height: 18)
         content.addSubview(topAndBottomBox)
-        debugBox.frame = NSRect(x: 18, y: 118, width: 460, height: 18)
+        arrangeBox.frame = NSRect(x: 18, y: 142, width: 500, height: 18)
+        content.addSubview(arrangeBox)
+        debugBox.frame = NSRect(x: 18, y: 118, width: 480, height: 18)
         content.addSubview(debugBox)
         content.addSubview(preview)
-        status.frame = NSRect(x: 20, y: 50, width: 460, height: 17)
+        status.frame = NSRect(x: 20, y: 50, width: 480, height: 17)
         content.addSubview(status)
 
         let revertButton = NSButton(title: "Revert", target: self, action: #selector(loadSettings))
-        revertButton.frame = NSRect(x: 274, y: 12, width: 110, height: 32)
+        revertButton.frame = NSRect(x: 294, y: 12, width: 110, height: 32)
         content.addSubview(revertButton)
-        applyButton.frame = NSRect(x: 376, y: 12, width: 110, height: 32)
+        applyButton.frame = NSRect(x: 396, y: 12, width: 110, height: 32)
         applyButton.keyEquivalent = "\r"
         applyButton.target = self
         applyButton.action = #selector(apply)
@@ -174,6 +177,7 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
         textWell.color = settings.foreground
         topAndBottomBox.state = settings.topAndBottom ? .on : .off
         debugBox.state = settings.debug ? .on : .off
+        arrangeBox.state = settings.arrangeWindows ? .on : .off
         classificationChanged()
         if prefsAreManaged() {
             //a profile wins over /Library/Preferences, a change here would never show
@@ -242,6 +246,7 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
         }
         commands.append("\(write) TopAndBottom -int \(topAndBottomBox.state == .on ? 1 : 0)")
         commands.append("\(write) Debug -int \(debugBox.state == .on ? 1 : 0)")
+        commands.append("\(write) ArrangeWindows -int \(arrangeBox.state == .on ? 1 : 0)")
         //the banners run as the user, they must be able to read the file
         commands.append("/bin/chmod 644 \(prefFile).plist")
         //escape for an AppleScript string, the shell command itself is already quoted
