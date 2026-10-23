@@ -2,7 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- SystemBanner configuration profile, for Mac OS X 10.7 Lion and later (on 10.6 use MCX, defaults or SystemBanner Settings, see README).
      Edit the values under mcx_preference_settings, then install it with the Profiles preference pane or your MDM.
-     Simple: 0 unconfigured, 1 UNCLASSIFIED, 2 CUI, 3 CONFIDENTIAL, 4 SECRET, 5 TOP SECRET, 6 TOP SECRET//SCI (overrides the custom settings).
+     Simple (overrides the custom settings): 0 unconfigured,
+       United States: 1 UNCLASSIFIED, 2 CUI, 3 CONFIDENTIAL, 4 SECRET, 5 TOP SECRET, 6 TOP SECRET//SCI,
+       France: 11 DIFFUSION RESTREINTE, 12 SECRET, 13 TRÈS SECRET,
+       Germany: 21 VS-NUR FÜR DEN DIENSTGEBRAUCH, 22 VS-VERTRAULICH, 23 GEHEIM, 24 STRENG GEHEIM,
+       United Kingdom: 31 OFFICIAL, 32 OFFICIAL-SENSITIVE, 33 SECRET, 34 TOP SECRET,
+       NATO: 41 NATO UNCLASSIFIED, 42 NATO RESTRICTED, 43 NATO CONFIDENTIAL, 44 NATO SECRET, 45 COSMIC TOP SECRET,
+       United Nations: 51 UN CONFIDENTIAL, 52 UN STRICTLY CONFIDENTIAL.
      Custom settings instead of Simple: "0" "1" "2" background red green blue, "3" "4" "5" text red green blue (0-255), "Text". -->
 <plist version="1.0">
 <dict>

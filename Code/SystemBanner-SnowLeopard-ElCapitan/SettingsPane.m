@@ -13,7 +13,9 @@
 #import <sys/wait.h>
 #import "Shared.h"
 
-#define CUSTOM_INDEX 7 //after "Not configured" and the 6 stock classifications
+//each item of the classification menu is tagged with the code of its classification (the Simple setting), 0 for "Not configured"
+#define CUSTOM_TAG -1
+#define SEPARATOR_TAG -2
 
 //runs a tool as root with the rights the lock was unlocked with; the arguments go to the tool as they are, no shell is involved.
 //Returns nil when it worked, or what went wrong, for the status line and Console.app
@@ -144,11 +146,25 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     [view addSubview:Label(@"Classification:", NSMakeRect(20, 285, 115, 17))];
     classification = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(137, 278, 345, 26) pullsDown:NO] autorelease];
     [classification addItemWithTitle:@"Not configured"];
-    for (int i = 1; i <= 6; i++)
+    NSString *system = nil;
+    for (int i = 0; i < presetCount; i++)
     {
-        [classification addItemWithTitle:stockTexts[i]];
+        if (![presets[i].system isEqualToString:system])
+        {
+            //a separator before each classification system
+            NSMenuItem *separator = [NSMenuItem separatorItem];
+            [separator setTag:SEPARATOR_TAG];
+            [[classification menu] addItem:separator];
+            system = presets[i].system;
+        }
+        [classification addItemWithTitle:PresetTitle(&presets[i])];
+        [[classification lastItem] setTag:presets[i].code];
     }
+    NSMenuItem *separator = [NSMenuItem separatorItem];
+    [separator setTag:SEPARATOR_TAG];
+    [[classification menu] addItem:separator];
     [classification addItemWithTitle:@"Custom"];
+    [[classification lastItem] setTag:CUSTOM_TAG];
     [classification setTarget:self];
     [classification setAction:@selector(classificationChanged:)];
     [view addSubview:classification];
@@ -227,7 +243,7 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
 - (void)updateEnabled
 {
     BOOL editable = [self isUnlocked] && !managed;
-    BOOL custom = [classification indexOfSelectedItem] == CUSTOM_INDEX;
+    BOOL custom = [classification selectedTag] == CUSTOM_TAG;
     [classification setEnabled:editable];
     [textField setEnabled:editable && custom];
     [backgroundWell setEnabled:editable && custom];
@@ -265,16 +281,16 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
 {
     ReadPrefs();
     int simple = 0;
-    NSInteger index = 0;
-    if (PrefInt(@"Simple", &simple) && simple > 0 && simple <= 6)
+    NSInteger tag = 0;
+    if (PrefInt(@"Simple", &simple) && PresetForCode(simple) != NULL)
     {
-        index = simple;
+        tag = simple;
     }
     else if (PrefValue(@"Text") != nil || PrefValue(@"0") != nil || PrefValue(@"3") != nil)
     {
-        index = CUSTOM_INDEX;
+        tag = CUSTOM_TAG;
     }
-    [classification selectItemAtIndex:index];
+    [classification selectItemWithTag:tag];
     [textField setStringValue:bannerText];
     [backgroundWell setColor:ColorFromBytes(bannerColor)];
     [textWell setColor:ColorFromBytes(bannerColor + 3)];
@@ -296,13 +312,15 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
 
 - (void)classificationChanged:(id)sender
 {
-    NSInteger index = [classification indexOfSelectedItem];
-    if (index != CUSTOM_INDEX)
+    NSInteger tag = [classification selectedTag];
+    if (tag != CUSTOM_TAG)
     {
         //a stock classification sets its own text and colors
-        [textField setStringValue:stockTexts[index]];
-        [backgroundWell setColor:ColorFromBytes(stockColors[index])];
-        [textWell setColor:ColorFromBytes(stockColors[index] + 3)];
+        const Preset *preset = PresetForCode((int)tag); //NULL for "Not configured"
+        const int *colors = preset != NULL ? preset->colors : unconfiguredColors;
+        [textField setStringValue:preset != NULL ? preset->text : unconfiguredText];
+        [backgroundWell setColor:ColorFromBytes(colors)];
+        [textWell setColor:ColorFromBytes(colors + 3)];
     }
     [self updateEnabled];
     [self updatePreview:nil];
@@ -358,10 +376,10 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
             : [NSString stringWithFormat:@"Error: administrator rights refused (error %d).", (int)granted]];
         return;
     }
-    NSInteger index = [classification indexOfSelectedItem];
+    NSInteger tag = [classification selectedTag];
     NSMutableArray *writes = [NSMutableArray array]; //each one: key, type, value
     NSMutableArray *deletes = [NSMutableArray arrayWithObjects:@"Text", @"0", @"1", @"2", @"3", @"4", @"5", nil];
-    if (index == CUSTOM_INDEX)
+    if (tag == CUSTOM_TAG)
     {
         //the text cannot be empty, it would show a blank banner
         NSString *text = [[[textField stringValue] componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] componentsJoinedByString:@" "];
@@ -378,9 +396,9 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
             [writes addObject:[NSArray arrayWithObjects:[NSString stringWithFormat:@"%d", i], @"-int", [NSString stringWithFormat:@"%d", preview->colors[i]], nil]];
         }
     }
-    else if (index > 0)
+    else if (tag > 0)
     {
-        [writes addObject:[NSArray arrayWithObjects:@"Simple", @"-int", [NSString stringWithFormat:@"%ld", (long)index], nil]];
+        [writes addObject:[NSArray arrayWithObjects:@"Simple", @"-int", [NSString stringWithFormat:@"%ld", (long)tag], nil]];
     }
     else
     {
@@ -418,7 +436,7 @@ static NSButton *Checkbox(NSString *title, NSRect frame)
     ReadPrefs();
     int simple = 0;
     BOOL simpleSet = PrefInt(@"Simple", &simple);
-    if ((index > 0 && index < CUSTOM_INDEX && (!simpleSet || simple != index)) || (index == CUSTOM_INDEX && simpleSet))
+    if ((tag > 0 && (!simpleSet || simple != tag)) || (tag == CUSTOM_TAG && simpleSet))
     {
         [self showError:@"Error: the settings were written, but SystemBanner does not read them back."];
         return;

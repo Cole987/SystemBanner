@@ -8,22 +8,65 @@ let prefDomain = "com.systembanner" as CFString
 let prefFile = "/Library/Preferences/com.systembanner"
 let prefKeys = ["Simple", "0", "1", "2", "3", "4", "5", "Text", "TopAndBottom", "Debug"]
 
-//stock colors for basic us gov classification based on gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
-//background red, green, blue, then text red, green, blue, same order as the "0" to "5" preference keys
-let stockColors: [[Int]] = [
-    [255, 255, 255, 0, 0, 0],       //unconfigured
-    [0, 122, 51, 255, 255, 255],    //UNCLASSIFIED
-    [48, 31, 85, 255, 255, 255],    //CUI
-    [0, 51, 160, 255, 255, 255],    //CONFIDENTIAL
-    [200, 16, 46, 255, 255, 255],   //SECRET
-    [255, 103, 31, 255, 255, 255],  //TOP SECRET
-    [247, 234, 72, 0, 0, 0]         //TOP SECRET//SCI
+//a stock classification, chosen with the Simple setting
+struct Preset {
+    let code: Int       //value of the Simple setting
+    let system: String  //classification system, groups the classifications in the settings
+    let text: String
+    let colors: [Int]   //background red, green, blue, then text red, green, blue, same order as the "0" to "5" preference keys
+
+    var title: String { //"France – SECRET", for the settings
+        return "\(system) \u{2013} \(text)"
+    }
+}
+
+let unconfiguredColors = [255, 255, 255, 0, 0, 0]
+let unconfiguredText = "Classification is not configured."
+
+//stock classifications, by system; the code is the value of the Simple setting, 1 to 6 for the United States as before,
+//then a range of ten per system; national colors are used where an official text sets them, NATO follows a common unofficial convention, the others are neutral
+//(white on black, so they cannot be taken for the black on white unconfigured banner)
+let presets = [
+    //United States: gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
+    Preset(code: 1, system: "United States", text: "UNCLASSIFIED", colors: [0, 122, 51, 255, 255, 255]),
+    Preset(code: 2, system: "United States", text: "CUI", colors: [48, 31, 85, 255, 255, 255]),
+    Preset(code: 3, system: "United States", text: "CONFIDENTIAL", colors: [0, 51, 160, 255, 255, 255]),
+    Preset(code: 4, system: "United States", text: "SECRET", colors: [200, 16, 46, 255, 255, 255]),
+    Preset(code: 5, system: "United States", text: "TOP SECRET", colors: [255, 103, 31, 255, 255, 255]),
+    Preset(code: 6, system: "United States", text: "TOP SECRET//SCI", colors: [247, 234, 72, 0, 0, 0]),
+    //France: decree 2019-1271 and IGI 1300 (2021) stamp SECRET and TRES SECRET in red; DIFFUSION RESTREINTE is a protection mark, not a classification, with no color: neutral
+    Preset(code: 11, system: "France", text: "DIFFUSION RESTREINTE", colors: [0, 0, 0, 255, 255, 255]),
+    Preset(code: 12, system: "France", text: "SECRET", colors: [200, 16, 46, 255, 255, 255]),
+    Preset(code: 13, system: "France", text: "TRÈS SECRET", colors: [200, 16, 46, 255, 255, 255]),
+    //Germany: VS-Anweisung annex IV (2023) marks STRENG GEHEIM and GEHEIM in red, with crossed yellow and red stripes for STRENG GEHEIM folders,
+    //and a blue stripe for VS-VERTRAULICH; VS-NUR FUER DEN DIENSTGEBRAUCH is marked in black or blue: neutral
+    Preset(code: 21, system: "Germany", text: "VS-NUR FÜR DEN DIENSTGEBRAUCH", colors: [0, 0, 0, 255, 255, 255]),
+    Preset(code: 22, system: "Germany", text: "VS-VERTRAULICH", colors: [0, 51, 160, 255, 255, 255]),
+    Preset(code: 23, system: "Germany", text: "GEHEIM", colors: [200, 16, 46, 255, 255, 255]),
+    Preset(code: 24, system: "Germany", text: "STRENG GEHEIM", colors: [200, 16, 46, 247, 234, 72]),
+    //United Kingdom: the Government Security Classifications guidance discourages color coding: neutral
+    Preset(code: 31, system: "United Kingdom", text: "OFFICIAL", colors: [0, 0, 0, 255, 255, 255]),
+    Preset(code: 32, system: "United Kingdom", text: "OFFICIAL-SENSITIVE", colors: [0, 0, 0, 255, 255, 255]),
+    Preset(code: 33, system: "United Kingdom", text: "SECRET", colors: [0, 0, 0, 255, 255, 255]),
+    Preset(code: 34, system: "United Kingdom", text: "TOP SECRET", colors: [0, 0, 0, 255, 255, 255]),
+    //NATO: AC/35-D/2002-REV5 sets no colors; common unofficial convention reusing the United States colors (orange for NATO RESTRICTED, yellow for COSMIC TOP SECRET)
+    Preset(code: 41, system: "NATO", text: "NATO UNCLASSIFIED", colors: [0, 122, 51, 255, 255, 255]),
+    Preset(code: 42, system: "NATO", text: "NATO RESTRICTED", colors: [255, 103, 31, 255, 255, 255]),
+    Preset(code: 43, system: "NATO", text: "NATO CONFIDENTIAL", colors: [0, 51, 160, 255, 255, 255]),
+    Preset(code: 44, system: "NATO", text: "NATO SECRET", colors: [200, 16, 46, 255, 255, 255]),
+    Preset(code: 45, system: "NATO", text: "COSMIC TOP SECRET", colors: [247, 234, 72, 0, 0, 0]),
+    //United Nations: ST/SGB/2007/6 sets no colors: neutral; "UN" keeps the levels apart from the United States ones
+    Preset(code: 51, system: "United Nations", text: "UN CONFIDENTIAL", colors: [0, 0, 0, 255, 255, 255]),
+    Preset(code: 52, system: "United Nations", text: "UN STRICTLY CONFIDENTIAL", colors: [0, 0, 0, 255, 255, 255])
 ]
-let stockTexts = ["Classification is not configured.", "UNCLASSIFIED", "CUI", "CONFIDENTIAL", "SECRET", "TOP SECRET", "TOP SECRET//SCI"]
+
+func preset(forCode code: Int) -> Preset? { //nil when no stock classification has this code
+    return presets.first { $0.code == code }
+}
 
 struct BannerSettings: Equatable {
-    var colors = stockColors[0]
-    var text = stockTexts[0]
+    var colors = unconfiguredColors
+    var text = unconfiguredText
     var topAndBottom = false
     var debug = false
 
@@ -78,9 +121,9 @@ func readSettings() -> BannerSettings {
         settings.text = text
     }
     //override custom if simple value is set
-    if let simple = prefInt("Simple"), (1...6).contains(simple) {
-        settings.colors = stockColors[simple]
-        settings.text = stockTexts[simple]
+    if let simple = prefInt("Simple"), let stock = preset(forCode: simple) {
+        settings.colors = stock.colors
+        settings.text = stock.text
     }
     settings.debug = prefInt("Debug") == 1
     settings.topAndBottom = prefInt("TopAndBottom") == 1

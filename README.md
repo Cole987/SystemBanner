@@ -21,6 +21,7 @@ CONTENTS
   - [Administration](#administration-1)
   - [Differences with the Windows version](#differences-with-the-windows-version)
   - [Building](#building)
+- [Classification systems](#classification-systems): France, Germany, United Kingdom, NATO, United Nations
 - [Roadmap](#roadmap)
 - [Credits](#credits)
 
@@ -30,7 +31,7 @@ ABOUT
 
 SystemBanner is an application used to display information security attributes or classification markings applicable for the Windows and Mac systems it runs on.
 
-SystemBanner was built with standards in mind. For example, SystemBanner comes out of the box with Group Policy templates that can configure SystemBanner to display the different levels of United States Classified National Security Information as defined by EO 13526, as amended, and United States Controlled Unclassified Information as defined by EO 13556, as amended.
+SystemBanner was built with standards in mind. For example, SystemBanner comes out of the box with Group Policy templates that can configure SystemBanner to display the different levels of United States Classified National Security Information as defined by EO 13526, as amended, and United States Controlled Unclassified Information as defined by EO 13556, as amended. This fork adds the classifications of France, Germany, the United Kingdom, NATO and the United Nations, see [CLASSIFICATION SYSTEMS](#classification-systems).
 
 In addition, custom options implemented in Group Policy which sets relevant Registry values allow for other types of organizations to display custom messages and colors to warn users of Windows-based computers of the sensitivity of the information displayed, such as PII, PHI, Proprietary, or any kind of text-based marking or warning.
 
@@ -198,7 +199,7 @@ SystemBanner reads its configuration from `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\
 
 | Value | Type | Meaning |
 |---|---|---|
-| `Simple` | DWORD | Stock classification: 0 unconfigured, 1 UNCLASSIFIED, 2 CUI, 3 CONFIDENTIAL, 4 SECRET, 5 TOP SECRET, 6 TOP SECRET//SCI. Overrides the custom settings. |
+| `Simple` | DWORD | Stock classification: 0 unconfigured, 1 to 6 for the United States (1 UNCLASSIFIED, 2 CUI, 3 CONFIDENTIAL, 4 SECRET, 5 TOP SECRET, 6 TOP SECRET//SCI), 11 to 52 for France, Germany, the United Kingdom, NATO and the United Nations, see [CLASSIFICATION SYSTEMS](#classification-systems). Overrides the custom settings. |
 | `0`, `1`, `2` | DWORD | Custom background color, red, green, blue (0-255). |
 | `3`, `4`, `5` | DWORD | Custom text color, red, green, blue (0-255). |
 | `Text` | String | Custom text. |
@@ -341,11 +342,64 @@ The project in `Code/SystemBanner` targets .NET Framework 4.0, x86. It builds wi
 
 The Windows 2000 build uses `SystemBanner2000.csproj` in the same folder: same sources, .NET Framework 2.0, x86, with `WIN2000` defined. `Win2000.cs` and the `#if WIN2000` blocks hold its differences (no registry views, no `WTSQueryUserToken`, self installation), and `App2000.config` selects the 2.0 runtime. It needs the .NET Framework 3.5 (which includes 2.0) targeting support, or the `Microsoft.NETFramework.ReferenceAssemblies.net20` NuGet package.
 
+----------------------
+CLASSIFICATION SYSTEMS
+----------------------
+
+The `Simple` setting picks a stock classification, with its text and colors, on every Windows and Mac version: in Group Policy, in a configuration profile, in the System Preferences pane or in SystemBanner Settings. Codes 1 to 6 are the United States levels of the original SystemBanner, the other systems each have a range of ten.
+
+Colors follow the official texts where they set some. NATO follows a common, unofficial convention. Elsewhere the banner is neutral, white on black, so it cannot be taken for the black on white "Classification is not configured." banner. These colors are a display choice of this project: they do not claim any equivalence between national levels, which are set by bilateral agreements.
+
+| Code | System | Text | Colors |
+|---|---|---|---|
+| 1 | United States | UNCLASSIFIED | white on green |
+| 2 | United States | CUI | white on purple |
+| 3 | United States | CONFIDENTIAL | white on blue |
+| 4 | United States | SECRET | white on red |
+| 5 | United States | TOP SECRET | white on orange |
+| 6 | United States | TOP SECRET//SCI | black on yellow |
+| 11 | France | DIFFUSION RESTREINTE | white on black |
+| 12 | France | SECRET | white on red |
+| 13 | France | TRÈS SECRET | white on red |
+| 21 | Germany | VS-NUR FÜR DEN DIENSTGEBRAUCH | white on black |
+| 22 | Germany | VS-VERTRAULICH | white on blue |
+| 23 | Germany | GEHEIM | white on red |
+| 24 | Germany | STRENG GEHEIM | yellow on red |
+| 31 | United Kingdom | OFFICIAL | white on black |
+| 32 | United Kingdom | OFFICIAL-SENSITIVE | white on black |
+| 33 | United Kingdom | SECRET | white on black |
+| 34 | United Kingdom | TOP SECRET | white on black |
+| 41 | NATO | NATO UNCLASSIFIED | white on green |
+| 42 | NATO | NATO RESTRICTED | white on orange |
+| 43 | NATO | NATO CONFIDENTIAL | white on blue |
+| 44 | NATO | NATO SECRET | white on red |
+| 45 | NATO | COSMIC TOP SECRET | black on yellow |
+| 51 | United Nations | UN CONFIDENTIAL | white on black |
+| 52 | United Nations | UN STRICTLY CONFIDENTIAL | white on black |
+
+- **United States:** colors of the GSA forms, collected by Frank Caviggia for [classification-banner](https://github.com/fcaviggia/classification-banner).
+- **France:** since 1 July 2021, two classification levels, SECRET and TRÈS SECRET ([décret n° 2019-1271](https://legifrance.gouv.fr/jorf/id/JORFTEXT000039440051)). The [IGI 1300](https://www.sgdsn.gouv.fr/files/files/Nos_missions/igi-1300-20210809.pdf) stamps them in red ink. DIFFUSION RESTREINTE is a protection mark, not a classification level, and has no set color.
+- **Germany:** the [VS-Anweisung, annex IV](https://www.verwaltungsvorschriften-im-internet.de/BMI-OESII5-20230313-SF-A004.htm) marks STRENG GEHEIM and GEHEIM in red, and VS-VERTRAULICH and VS-NUR FÜR DEN DIENSTGEBRAUCH in black or blue. Folders get crossed yellow and red stripes for STRENG GEHEIM, a red stripe for GEHEIM and a blue stripe for VS-VERTRAULICH, hence yellow text for STRENG GEHEIM and blue for VS-VERTRAULICH.
+- **United Kingdom:** OFFICIAL, SECRET and TOP SECRET, OFFICIAL-SENSITIVE being a marking of OFFICIAL information ([Government Security Classifications Policy](https://gov.uk/government/publications/government-security-classifications)). The [official guidance](https://assets.publishing.service.gov.uk/media/649c3941bb13dc0012b2e276/Guidance_1.7_-_Frequently_Asked_Questions.pdf) asks not to color code the marking: neutral.
+- **NATO:** the levels of [AC/35-D/2002-REV5](https://nsa.valisluureamet.ee/doc/regul/nato/9009_AC_35-D_2002_REV5_EST-FINAL_26.04.24.pdf), which sets no colors. The banner follows a common, unofficial convention, used for example by commercial classification banners: the colors of the United States levels, green for NATO UNCLASSIFIED, orange for NATO RESTRICTED, blue for NATO CONFIDENTIAL, red for NATO SECRET and yellow for COSMIC TOP SECRET. No NATO text found sets these colors.
+- **United Nations:** CONFIDENTIAL and STRICTLY CONFIDENTIAL from [ST/SGB/2007/6](https://digitallibrary.un.org/record/593127), shown with "UN" so they cannot be read as United States levels. The scheme is public, which, for a classification scheme, is a pleasant surprise. No colors: neutral.
+
+Windows XP, DIFFUSION RESTREINTE (France), with a top and a bottom banner:
+
+![Alt text](Docs/Images/XP_FrenchClassification.png?raw=true)
+
+Windows Vista, STRENG GEHEIM (Germany), yellow on red, with a top and a bottom banner:
+
+![Alt text](Docs/Images/Vista_GermanClassification.png?raw=true)
+
+Windows 2000, NATO SECRET, white on red:
+
+![Alt text](Docs/Images/2000_NatoClassification.png?raw=true)
+
 -------
 ROADMAP
 -------
 
-- **More classification systems.** Stock presets for the French, German and British classification markings, and for NATO, built on the same model as the United States levels today: chosen with Group Policy, a configuration profile or the settings, on every Windows and Mac version. United Nations markings will follow if their scheme is publicly documented, which, for a classification scheme, is not a given.
 - **Microsoft Office add-in.** Mark documents with the classification directly, for example in their header and footer, from the same settings as the banner.
 
 -------

@@ -5,20 +5,62 @@
 //objects kept in globals are held with CFRetain, that works with and without garbage collection.
 #import "Shared.h"
 
-//stock colors for basic us gov classification based on gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
-//background red, green, blue, then text red, green, blue, same order as the "0" to "5" preference keys
-const int stockColors[7][6] = {
-    { 255, 255, 255, 0, 0, 0 },       //unconfigured
-    { 0, 122, 51, 255, 255, 255 },    //UNCLASSIFIED
-    { 48, 31, 85, 255, 255, 255 },    //CUI
-    { 0, 51, 160, 255, 255, 255 },    //CONFIDENTIAL
-    { 200, 16, 46, 255, 255, 255 },   //SECRET
-    { 255, 103, 31, 255, 255, 255 },  //TOP SECRET
-    { 247, 234, 72, 0, 0, 0 }         //TOP SECRET//SCI
+//stock classifications, by system; the code is the value of the Simple setting, 1 to 6 for the United States as before,
+//then a range of ten per system; national colors are used where an official text sets them, NATO follows a common unofficial convention, the others are neutral
+//(white on black, so they cannot be taken for the black on white unconfigured banner)
+const int unconfiguredColors[6] = { 255, 255, 255, 0, 0, 0 };
+NSString *const unconfiguredText = @"Classification is not configured.";
+const Preset presets[] = {
+    //United States: gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
+    { 1, @"United States", @"UNCLASSIFIED", { 0, 122, 51, 255, 255, 255 } },
+    { 2, @"United States", @"CUI", { 48, 31, 85, 255, 255, 255 } },
+    { 3, @"United States", @"CONFIDENTIAL", { 0, 51, 160, 255, 255, 255 } },
+    { 4, @"United States", @"SECRET", { 200, 16, 46, 255, 255, 255 } },
+    { 5, @"United States", @"TOP SECRET", { 255, 103, 31, 255, 255, 255 } },
+    { 6, @"United States", @"TOP SECRET//SCI", { 247, 234, 72, 0, 0, 0 } },
+    //France: decree 2019-1271 and IGI 1300 (2021) stamp SECRET and TRES SECRET in red; DIFFUSION RESTREINTE is a protection mark, not a classification, with no color: neutral
+    { 11, @"France", @"DIFFUSION RESTREINTE", { 0, 0, 0, 255, 255, 255 } },
+    { 12, @"France", @"SECRET", { 200, 16, 46, 255, 255, 255 } },
+    { 13, @"France", @"TRÈS SECRET", { 200, 16, 46, 255, 255, 255 } },
+    //Germany: VS-Anweisung annex IV (2023) marks STRENG GEHEIM and GEHEIM in red, with crossed yellow and red stripes for STRENG GEHEIM folders,
+    //and a blue stripe for VS-VERTRAULICH; VS-NUR FUER DEN DIENSTGEBRAUCH is marked in black or blue: neutral
+    { 21, @"Germany", @"VS-NUR FÜR DEN DIENSTGEBRAUCH", { 0, 0, 0, 255, 255, 255 } },
+    { 22, @"Germany", @"VS-VERTRAULICH", { 0, 51, 160, 255, 255, 255 } },
+    { 23, @"Germany", @"GEHEIM", { 200, 16, 46, 255, 255, 255 } },
+    { 24, @"Germany", @"STRENG GEHEIM", { 200, 16, 46, 247, 234, 72 } },
+    //United Kingdom: the Government Security Classifications guidance discourages color coding: neutral
+    { 31, @"United Kingdom", @"OFFICIAL", { 0, 0, 0, 255, 255, 255 } },
+    { 32, @"United Kingdom", @"OFFICIAL-SENSITIVE", { 0, 0, 0, 255, 255, 255 } },
+    { 33, @"United Kingdom", @"SECRET", { 0, 0, 0, 255, 255, 255 } },
+    { 34, @"United Kingdom", @"TOP SECRET", { 0, 0, 0, 255, 255, 255 } },
+    //NATO: AC/35-D/2002-REV5 sets no colors; common unofficial convention reusing the United States colors (orange for NATO RESTRICTED, yellow for COSMIC TOP SECRET)
+    { 41, @"NATO", @"NATO UNCLASSIFIED", { 0, 122, 51, 255, 255, 255 } },
+    { 42, @"NATO", @"NATO RESTRICTED", { 255, 103, 31, 255, 255, 255 } },
+    { 43, @"NATO", @"NATO CONFIDENTIAL", { 0, 51, 160, 255, 255, 255 } },
+    { 44, @"NATO", @"NATO SECRET", { 200, 16, 46, 255, 255, 255 } },
+    { 45, @"NATO", @"COSMIC TOP SECRET", { 247, 234, 72, 0, 0, 0 } },
+    //United Nations: ST/SGB/2007/6 sets no colors: neutral; "UN" keeps the levels apart from the United States ones
+    { 51, @"United Nations", @"UN CONFIDENTIAL", { 0, 0, 0, 255, 255, 255 } },
+    { 52, @"United Nations", @"UN STRICTLY CONFIDENTIAL", { 0, 0, 0, 255, 255, 255 } },
 };
-NSString *const stockTexts[7] = {
-    @"Classification is not configured.", @"UNCLASSIFIED", @"CUI", @"CONFIDENTIAL", @"SECRET", @"TOP SECRET", @"TOP SECRET//SCI"
-};
+const int presetCount = sizeof(presets) / sizeof(presets[0]);
+
+const Preset *PresetForCode(int code)
+{
+    for (int i = 0; i < presetCount; i++)
+    {
+        if (presets[i].code == code)
+        {
+            return &presets[i];
+        }
+    }
+    return NULL;
+}
+
+NSString *PresetTitle(const Preset *preset)
+{
+    return [NSString stringWithFormat:@"%@ \u2013 %@", preset->system, preset->text];
+}
 
 BOOL debug;
 BOOL bannerTopAndBottom;
@@ -87,8 +129,8 @@ void ReadPrefs(void)
     CFPreferencesSynchronize(PREF_DOMAIN, kCFPreferencesAnyUser, kCFPreferencesAnyHost);
     CFPreferencesAppSynchronize(PREF_DOMAIN);
     //values removed since the last read must go back to their defaults
-    memcpy(bannerColor, stockColors[0], sizeof(bannerColor));
-    NSString *text = stockTexts[0];
+    memcpy(bannerColor, unconfiguredColors, sizeof(bannerColor));
+    NSString *text = unconfiguredText;
     bannerTopAndBottom = NO;
     debug = NO;
     int value;
@@ -105,10 +147,11 @@ void ReadPrefs(void)
         text = customText;
     }
     //override custom if simple value is set
-    if (PrefInt(@"Simple", &value) && value > 0 && value <= 6)
+    const Preset *preset = PrefInt(@"Simple", &value) ? PresetForCode(value) : NULL;
+    if (preset != NULL)
     {
-        memcpy(bannerColor, stockColors[value], sizeof(bannerColor));
-        text = stockTexts[value];
+        memcpy(bannerColor, preset->colors, sizeof(bannerColor));
+        text = preset->text;
     }
     if (PrefInt(@"Debug", &value) && value == 1)
     {

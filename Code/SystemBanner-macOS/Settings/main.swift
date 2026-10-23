@@ -5,7 +5,9 @@
 import Cocoa
 import OpenDirectory
 
-let customIndex = 7 //after "Not configured" and the 6 stock classifications
+//each item of the classification menu is tagged with the code of its classification (the Simple setting), 0 for "Not configured"
+let customTag = -1
+let separatorTag = -2
 
 func isAdmin() -> Bool {
     guard let node = try? ODNode(session: ODSession.default(), type: ODNodeType(kODNodeTypeAuthentication)),
@@ -31,7 +33,7 @@ func colorBytes(_ color: NSColor) -> [Int]? {
 
 final class PreviewView: NSView {
     var text = ""
-    var colors = stockColors[0]
+    var colors = unconfiguredColors
 
     override func draw(_ dirtyRect: NSRect) {
         drawBanner(bounds, text: text, background: sRGBColor(colors, 0), foreground: sRGBColor(colors, 3))
@@ -65,6 +67,12 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
         NSApplication.shared.mainMenu = mainMenu
     }
 
+    func addSeparator() {
+        let separator = NSMenuItem.separator()
+        separator.tag = separatorTag
+        classification.menu?.addItem(separator)
+    }
+
     func label(_ text: String, _ frame: NSRect) -> NSTextField {
         let label = NSTextField(labelWithString: text)
         label.frame = frame
@@ -78,8 +86,19 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
         }
         content.addSubview(label("Classification:", NSRect(x: 20, y: 252, width: 115, height: 17)))
         classification.addItem(withTitle: "Not configured")
-        classification.addItems(withTitles: Array(stockTexts[1...6]))
+        var system: String?
+        for stock in presets {
+            if stock.system != system {
+                //a separator before each classification system
+                addSeparator()
+                system = stock.system
+            }
+            classification.addItem(withTitle: stock.title)
+            classification.lastItem?.tag = stock.code
+        }
+        addSeparator()
         classification.addItem(withTitle: "Custom")
+        classification.lastItem?.tag = customTag
         classification.target = self
         classification.action = #selector(classificationChanged)
         content.addSubview(classification)
@@ -143,12 +162,12 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
 
     @objc func loadSettings() {
         let settings = readSettings()
-        if let simple = prefInt("Simple"), (1...6).contains(simple) {
-            classification.selectItem(at: simple)
+        if let simple = prefInt("Simple"), preset(forCode: simple) != nil {
+            classification.selectItem(withTag: simple)
         } else if prefValue("Text") != nil || prefValue("0") != nil || prefValue("3") != nil {
-            classification.selectItem(at: customIndex)
+            classification.selectItem(withTag: customTag)
         } else {
-            classification.selectItem(at: 0)
+            classification.selectItem(withTag: 0)
         }
         textField.stringValue = settings.text
         backgroundWell.color = settings.background
@@ -166,13 +185,15 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
     }
 
     @objc func classificationChanged() {
-        let index = classification.indexOfSelectedItem
-        let custom = index == customIndex
+        let tag = classification.selectedTag()
+        let custom = tag == customTag
         if !custom {
-            //a stock classification sets its own text and colors
-            textField.stringValue = stockTexts[index]
-            backgroundWell.color = sRGBColor(stockColors[index], 0)
-            textWell.color = sRGBColor(stockColors[index], 3)
+            //a stock classification sets its own text and colors, "Not configured" has none
+            let stock = preset(forCode: tag)
+            let colors = stock?.colors ?? unconfiguredColors
+            textField.stringValue = stock?.text ?? unconfiguredText
+            backgroundWell.color = sRGBColor(colors, 0)
+            textWell.color = sRGBColor(colors, 3)
         }
         textField.isEnabled = custom
         backgroundWell.isEnabled = custom
@@ -194,12 +215,12 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
 
     @objc func apply() {
         updatePreview()
-        let index = classification.indexOfSelectedItem
+        let tag = classification.selectedTag()
         let write = "/usr/bin/defaults write \(prefFile)"
         let delete = "/usr/bin/defaults delete \(prefFile)"
         var commands: [String] = []
         var customKeys = ["Text", "0", "1", "2", "3", "4", "5"]
-        if index == customIndex {
+        if tag == customTag {
             //the text cannot be empty, it would show a blank banner
             let text = textField.stringValue.components(separatedBy: .newlines).joined(separator: " ")
             if text.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -212,8 +233,8 @@ final class SettingsController: NSObject, NSApplicationDelegate, NSTextFieldDele
                 commands.append("\(write) \(i) -int \(value)")
             }
         } else {
-            if index > 0 {
-                commands.append("\(write) Simple -int \(index)")
+            if tag > 0 {
+                commands.append("\(write) Simple -int \(tag)")
             } else {
                 customKeys.append("Simple")
             }

@@ -54,6 +54,96 @@
               <decimal value="6" />
             </value>
           </item>
+          <item displayName="$(string.Preset_11)">
+            <value>
+              <decimal value="11" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_12)">
+            <value>
+              <decimal value="12" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_13)">
+            <value>
+              <decimal value="13" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_21)">
+            <value>
+              <decimal value="21" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_22)">
+            <value>
+              <decimal value="22" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_23)">
+            <value>
+              <decimal value="23" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_24)">
+            <value>
+              <decimal value="24" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_31)">
+            <value>
+              <decimal value="31" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_32)">
+            <value>
+              <decimal value="32" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_33)">
+            <value>
+              <decimal value="33" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_34)">
+            <value>
+              <decimal value="34" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_41)">
+            <value>
+              <decimal value="41" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_42)">
+            <value>
+              <decimal value="42" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_43)">
+            <value>
+              <decimal value="43" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_44)">
+            <value>
+              <decimal value="44" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_45)">
+            <value>
+              <decimal value="45" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_51)">
+            <value>
+              <decimal value="51" />
+            </value>
+          </item>
+          <item displayName="$(string.Preset_52)">
+            <value>
+              <decimal value="52" />
+            </value>
+          </item>
         </enum>
       </elements>
     </policy>

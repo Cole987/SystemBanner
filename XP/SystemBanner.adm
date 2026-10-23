@@ -20,6 +20,24 @@ CATEGORY !!SystemBanner
         NAME !!Secret VALUE NUMERIC 4
         NAME !!TopSecret VALUE NUMERIC 5
         NAME !!TopSecretSci VALUE NUMERIC 6
+        NAME !!Preset11 VALUE NUMERIC 11
+        NAME !!Preset12 VALUE NUMERIC 12
+        NAME !!Preset13 VALUE NUMERIC 13
+        NAME !!Preset21 VALUE NUMERIC 21
+        NAME !!Preset22 VALUE NUMERIC 22
+        NAME !!Preset23 VALUE NUMERIC 23
+        NAME !!Preset24 VALUE NUMERIC 24
+        NAME !!Preset31 VALUE NUMERIC 31
+        NAME !!Preset32 VALUE NUMERIC 32
+        NAME !!Preset33 VALUE NUMERIC 33
+        NAME !!Preset34 VALUE NUMERIC 34
+        NAME !!Preset41 VALUE NUMERIC 41
+        NAME !!Preset42 VALUE NUMERIC 42
+        NAME !!Preset43 VALUE NUMERIC 43
+        NAME !!Preset44 VALUE NUMERIC 44
+        NAME !!Preset45 VALUE NUMERIC 45
+        NAME !!Preset51 VALUE NUMERIC 51
+        NAME !!Preset52 VALUE NUMERIC 52
       END ITEMLIST
     END PART
   END POLICY
@@ -84,15 +102,33 @@ END CATEGORY
 [strings]
 SystemBanner="SystemBanner"
 SimplePolicy="Set Simple Classification Setting"
-SimpleExplain="When this setting is enabled, the classification level selected will be shown. When set to UNCONFIGURED, not configured or disabled, the simple classification will be unconfigured and custom settings can be used."
+SimpleExplain="When this setting is enabled, the classification level selected will be shown. When set to UNCONFIGURED, not configured or disabled, the simple classification will be unconfigured and custom settings can be used. The classifications are grouped by system: United States, France, Germany, United Kingdom, NATO and United Nations. National colors are used where an official text sets them (United States, France, Germany), NATO follows a common unofficial convention, the other classifications are shown in white on black."
 SimplePart="Simple Classification Setting"
 Unconfigured="UNCONFIGURED"
-Unclassified="UNCLASSIFIED"
-Cui="CUI"
-Confidential="CONFIDENTIAL"
-Secret="SECRET"
-TopSecret="TOP SECRET"
-TopSecretSci="TOP SECRET SCI"
+Unclassified="United States - UNCLASSIFIED"
+Cui="United States - CUI"
+Confidential="United States - CONFIDENTIAL"
+Secret="United States - SECRET"
+TopSecret="United States - TOP SECRET"
+TopSecretSci="United States - TOP SECRET//SCI"
+Preset11="France - DIFFUSION RESTREINTE"
+Preset12="France - SECRET"
+Preset13="France - TRÈS SECRET"
+Preset21="Germany - VS-NUR FÜR DEN DIENSTGEBRAUCH"
+Preset22="Germany - VS-VERTRAULICH"
+Preset23="Germany - GEHEIM"
+Preset24="Germany - STRENG GEHEIM"
+Preset31="United Kingdom - OFFICIAL"
+Preset32="United Kingdom - OFFICIAL-SENSITIVE"
+Preset33="United Kingdom - SECRET"
+Preset34="United Kingdom - TOP SECRET"
+Preset41="NATO - NATO UNCLASSIFIED"
+Preset42="NATO - NATO RESTRICTED"
+Preset43="NATO - NATO CONFIDENTIAL"
+Preset44="NATO - NATO SECRET"
+Preset45="NATO - COSMIC TOP SECRET"
+Preset51="United Nations - UN CONFIDENTIAL"
+Preset52="United Nations - UN STRICTLY CONFIDENTIAL"
 BackgroundPolicy="Set Custom Background Color"
 BackgroundExplain="When Set Simple Classification Setting is set to UNCONFIGURED, not configured or disabled, and this setting is defined, this custom color value is displayed in the Background."
 BackgroundRed="Red Background Color Value in Decimal (0-255)"

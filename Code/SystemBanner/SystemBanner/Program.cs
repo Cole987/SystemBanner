@@ -25,23 +25,70 @@ namespace SystemBanner
         public static int[] oldBannerColor;
         public static string oldBannerText;
         public static bool oldBannerTopAndBottom;
-        //defines stock colors for basic us gov classification based on gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
+        //stock classifications, by system; the code is the value of the Simple setting, 1 to 6 for the United States as before,
+        //then a range of ten per system; national colors are used where an official text sets them, NATO follows a common unofficial convention, the others are neutral
+        //(white on black, so they cannot be taken for the black on white unconfigured banner)
         public static int[] unconfiguredBannerColor = new int[6] { 255, 255, 255, 0, 0, 0 };
-        public static int[] unclassifiedBannerColor = new int[6] { 0, 122, 51, 255, 255, 255 };
-        public static int[] cuiBannerColor = new int[6] { 48, 31, 85, 255, 255, 255 };
-        public static int[] confidentialBannerColor = new int[6] { 0, 51, 160, 255, 255, 255 };
-        public static int[] secretBannerColor = new int[6] { 200, 16, 46, 255, 255, 255 };
-        public static int[] topsecretBannerColor = new int[6] { 255, 103, 31, 255, 255, 255 };
-        public static int[] topsecretsciBannerColor = new int[6] { 247, 234, 72, 0, 0, 0 };
         public static string unconfiguredBannerText = "Classification is not configured.";
-        public static string unclassifiedBannerText = "UNCLASSIFIED";
-        public static string cuiBannerText = "CUI";
-        public static string confidentialBannerText = "CONFIDENTIAL";
-        public static string secretBannerText = "SECRET";
-        public static string topsecretBannerText = "TOP SECRET";
-        public static string topsecretsciBannerText = "TOP SECRET//SCI";
-        public static int[][] simpleBannerColors = new int[][] { unconfiguredBannerColor, unclassifiedBannerColor, cuiBannerColor, confidentialBannerColor, secretBannerColor, topsecretBannerColor, topsecretsciBannerColor };
-        public static string[] simpleBannerTexts = { unconfiguredBannerText, unclassifiedBannerText, cuiBannerText, confidentialBannerText, secretBannerText, topsecretBannerText, topsecretsciBannerText };
+        public class Preset
+        {
+            public int Code; //value of the Simple setting
+            public string ClassificationSystem;
+            public string Text;
+            public int[] Colors; //background red, green, blue, then text red, green, blue, same order as the "0" to "5" registry values
+            public Preset(int code, string classificationSystem, string text, int[] colors)
+            {
+                Code = code;
+                ClassificationSystem = classificationSystem;
+                Text = text;
+                Colors = colors;
+            }
+        }
+        public static Preset[] presets = new Preset[]
+        {
+            //United States: gsa form color info collected by Frank Caviggia @ https://github.com/fcaviggia/classification-banner
+            new Preset(1, "United States", "UNCLASSIFIED", new int[6] { 0, 122, 51, 255, 255, 255 }),
+            new Preset(2, "United States", "CUI", new int[6] { 48, 31, 85, 255, 255, 255 }),
+            new Preset(3, "United States", "CONFIDENTIAL", new int[6] { 0, 51, 160, 255, 255, 255 }),
+            new Preset(4, "United States", "SECRET", new int[6] { 200, 16, 46, 255, 255, 255 }),
+            new Preset(5, "United States", "TOP SECRET", new int[6] { 255, 103, 31, 255, 255, 255 }),
+            new Preset(6, "United States", "TOP SECRET//SCI", new int[6] { 247, 234, 72, 0, 0, 0 }),
+            //France: decree 2019-1271 and IGI 1300 (2021) stamp SECRET and TRES SECRET in red; DIFFUSION RESTREINTE is a protection mark, not a classification, with no color: neutral
+            new Preset(11, "France", "DIFFUSION RESTREINTE", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            new Preset(12, "France", "SECRET", new int[6] { 200, 16, 46, 255, 255, 255 }),
+            new Preset(13, "France", "TR\u00c8S SECRET", new int[6] { 200, 16, 46, 255, 255, 255 }),
+            //Germany: VS-Anweisung annex IV (2023) marks STRENG GEHEIM and GEHEIM in red, with crossed yellow and red stripes for STRENG GEHEIM folders,
+            //and a blue stripe for VS-VERTRAULICH; VS-NUR FUER DEN DIENSTGEBRAUCH is marked in black or blue: neutral
+            new Preset(21, "Germany", "VS-NUR F\u00dcR DEN DIENSTGEBRAUCH", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            new Preset(22, "Germany", "VS-VERTRAULICH", new int[6] { 0, 51, 160, 255, 255, 255 }),
+            new Preset(23, "Germany", "GEHEIM", new int[6] { 200, 16, 46, 255, 255, 255 }),
+            new Preset(24, "Germany", "STRENG GEHEIM", new int[6] { 200, 16, 46, 247, 234, 72 }),
+            //United Kingdom: the Government Security Classifications guidance discourages color coding: neutral
+            new Preset(31, "United Kingdom", "OFFICIAL", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            new Preset(32, "United Kingdom", "OFFICIAL-SENSITIVE", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            new Preset(33, "United Kingdom", "SECRET", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            new Preset(34, "United Kingdom", "TOP SECRET", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            //NATO: AC/35-D/2002-REV5 sets no colors; common unofficial convention reusing the United States colors (orange for NATO RESTRICTED, yellow for COSMIC TOP SECRET)
+            new Preset(41, "NATO", "NATO UNCLASSIFIED", new int[6] { 0, 122, 51, 255, 255, 255 }),
+            new Preset(42, "NATO", "NATO RESTRICTED", new int[6] { 255, 103, 31, 255, 255, 255 }),
+            new Preset(43, "NATO", "NATO CONFIDENTIAL", new int[6] { 0, 51, 160, 255, 255, 255 }),
+            new Preset(44, "NATO", "NATO SECRET", new int[6] { 200, 16, 46, 255, 255, 255 }),
+            new Preset(45, "NATO", "COSMIC TOP SECRET", new int[6] { 247, 234, 72, 0, 0, 0 }),
+            //United Nations: ST/SGB/2007/6 sets no colors: neutral; "UN" keeps the levels apart from the United States ones
+            new Preset(51, "United Nations", "UN CONFIDENTIAL", new int[6] { 0, 0, 0, 255, 255, 255 }),
+            new Preset(52, "United Nations", "UN STRICTLY CONFIDENTIAL", new int[6] { 0, 0, 0, 255, 255, 255 })
+        };
+        public static Preset FindPreset(int code) //null when no stock classification has this code
+        {
+            foreach (Preset preset in presets)
+            {
+                if (preset.Code == code)
+                {
+                    return preset;
+                }
+            }
+            return null;
+        }
         //set default color and text as unconfigured in case first run/registry data does not exist
         public static int[] bannerColor = unconfiguredBannerColor;
         public static string bannerText = unconfiguredBannerText;
@@ -195,8 +242,8 @@ namespace SystemBanner
             }
             if (!found) //show unconfigured instead of crashing or keeping half read values
             {
-                bannerColor = simpleBannerColors[0];
-                bannerText = simpleBannerTexts[0];
+                bannerColor = unconfiguredBannerColor;
+                bannerText = unconfiguredBannerText;
             }
             //log where the settings come from, only when it changes (this runs every 5 sec)
 #if WIN2000
@@ -351,10 +398,11 @@ namespace SystemBanner
                     if (simpleValue != null)
                     {
                         simpleValue = key.GetValue("Simple");
-                        if (((int)simpleValue > 0) & ((int)simpleValue <= 6)) //check bounds of input fron registry against 
+                        Preset preset = FindPreset((int)simpleValue); //null for 0 and unknown codes
+                        if (preset != null)
                         {
-                            bannerColor = simpleBannerColors[(int)simpleValue];
-                            bannerText = simpleBannerTexts[(int)simpleValue];
+                            bannerColor = preset.Colors;
+                            bannerText = preset.Text;
                         }
                     }
                     //check if debug exists and is 1. If 1 then set debug to true.
@@ -380,8 +428,8 @@ namespace SystemBanner
                 //if no reg values, set to not configured.
                 else
                 {
-                    bannerColor = simpleBannerColors[0];
-                    bannerText = simpleBannerTexts[0];
+                    bannerColor = unconfiguredBannerColor;
+                    bannerText = unconfiguredBannerText;
                     return false;
                 }
             }

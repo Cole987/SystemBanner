@@ -1,1 +1,2 @@
 *.bat linguist-detectable=false
+*.adm text eol=crlf
