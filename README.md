@@ -333,6 +333,8 @@ Moving the windows of other apps needs the Accessibility access:
 
 SystemBanner is signed ad hoc, so macOS ties this access to the exact build: after an update of SystemBanner, remove it from the Accessibility list and allow it again. Without the access, the banners work as before and windows can slip under them.
 
+Tested on macOS 26 (Apple Silicon): windows under the top banner move right below it within a second, windows under the bottom banner are shortened to end right above it, also when the Dock changes size and moves the bottom banner. Still to be tested on Mac OS X 10.6 to OS X 10.11 and macOS 10.12.
+
 ### Differences with the Windows version
 
 - **No reserved screen space.** macOS has no AppBars: the top banner sits right below the menu bar and the bottom banner right above the Dock, over other windows. Clicks go through the banner, so a title bar under it can still be dragged. The optional `ArrangeWindows` setting moves the windows that slip under a banner, see below. Like the bottom banner of Windows sits below the taskbar, the top banner stays below the menu bar, so Spotlight and menus open over it, and the bottom banner below the Dock, so magnified Dock icons show over it.

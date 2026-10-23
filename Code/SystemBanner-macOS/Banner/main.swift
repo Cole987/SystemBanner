@@ -1,13 +1,15 @@
 //Copyright (c) 2023, Aaron Wawrzyniak. MIT License Applies.
 //macOS 10.12 Sierra and later port: Copyright (c) 2026, Cole. MIT License Applies.
 import Cocoa
+import os.log
 
 //true for the login window banner, started by the LoginWindow launchd agent (the macOS counterpart of /winlogon)
 let loginWindow = CommandLine.arguments.contains("--loginwindow")
 
 func log(_ message: String, _ settings: BannerSettings) {
     if settings.debug {
-        NSLog("%@", message) //shows in Console.app
+        //public: the unified log of macOS 10.12 and later hides "%@" arguments as <private>, NSLog included
+        os_log("%{public}@", message) //shows in Console.app
     }
 }
 
