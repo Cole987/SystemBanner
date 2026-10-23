@@ -60,6 +60,7 @@ WINDOWS FEATURES
 - **Persistence.** A Windows service restarts the banner within about 3 seconds if a user closes or kills it. Alt+F4 does not close the banner, and Windows restarts the service if it crashes.
 - **Always visible.** The banner is fully opaque and always on top. The bottom banner sits right below the taskbar in the z-order, so the Start menu and tray notifications that open over it stay readable.
 - **Fullscreen videos stay fully visible.** When an app goes fullscreen (tested with VLC and Firefox), the bottom banner moves to the very bottom of the screen and SystemBanner resizes the app once to fit between the top and bottom banners, over the taskbar. The banners never hide part of the video, and everything goes back in place when fullscreen ends.
+- **Classification systems of several countries.** On top of the United States levels, stock classifications for France, Germany, the United Kingdom, NATO and the United Nations, picked in Group Policy, with the colors of their official texts where they set some, see [CLASSIFICATION SYSTEMS](#classification-systems).
 - **Live configuration updates.** Classification, text, colors and banner position changes apply in about one second, on the user banner and on the logon screen banner, with no restart.
 - **Troubleshooting.** Crash logs with full stack traces, and two scripts that turn debug logging on and off and gather every log in one folder.
 
@@ -98,6 +99,7 @@ MACOS FEATURES
 - **Fullscreen apps.** When an app covers a whole screen, the banners move to the screen edges and stay visible over it.
 - **Windows kept out from under the banners (optional).** macOS has no AppBars, so SystemBanner can move and shorten the windows of other apps that slip under a banner, once the mouse is released, like window managers do. It needs the Accessibility access, and is off by default, see [Keeping windows out from under the banners](#keeping-windows-out-from-under-the-banners).
 - **Settings for administrators only.** A System Preferences pane with the standard lock on Mac OS X 10.6 to 10.11, the SystemBanner Settings app on macOS 10.12 and later, both with a live preview. A configuration profile can also set SystemBanner, like Group Policy on Windows.
+- **Classification systems of several countries.** The same stock classifications as on Windows, United States, France, Germany, the United Kingdom, NATO and the United Nations, picked in the settings or in a configuration profile, see [CLASSIFICATION SYSTEMS](#classification-systems).
 - **Live configuration updates.** Classification, text, colors and banner position changes apply in about one second, with no restart.
 - **Troubleshooting.** `--diag` prints what SystemBanner reads, and the `Debug` setting logs to Console.app.
 
@@ -333,7 +335,7 @@ Moving the windows of other apps needs the Accessibility access:
 
 SystemBanner is signed ad hoc, so macOS ties this access to the exact build: after an update of SystemBanner, remove it from the Accessibility list and allow it again. Without the access, the banners work as before and windows can slip under them.
 
-Tested on macOS 26 (Apple Silicon): windows under the top banner move right below it within a second, windows under the bottom banner are shortened to end right above it, also when the Dock changes size and moves the bottom banner. Still to be tested on Mac OS X 10.6 to OS X 10.11 and macOS 10.12.
+Tested on the same Macs as the rest of the Mac versions, from Mac OS X 10.6 to macOS 26: windows under the top banner move right below it within a second, windows under the bottom banner are shortened to end right above it, also when the Dock changes size and moves the bottom banner.
 
 ### Differences with the Windows version
 
@@ -399,6 +401,10 @@ Colors follow the official texts where they set some. NATO follows a common, uno
 - **NATO:** the levels of [AC/35-D/2002-REV5](https://nsa.valisluureamet.ee/doc/regul/nato/9009_AC_35-D_2002_REV5_EST-FINAL_26.04.24.pdf), which sets no colors. The banner follows a common, unofficial convention, used for example by commercial classification banners: the colors of the United States levels, green for NATO UNCLASSIFIED, orange for NATO RESTRICTED, blue for NATO CONFIDENTIAL, red for NATO SECRET and yellow for COSMIC TOP SECRET. No NATO text found sets these colors.
 - **United Nations:** CONFIDENTIAL and STRICTLY CONFIDENTIAL from [ST/SGB/2007/6](https://digitallibrary.un.org/record/593127), shown with "UN" so they cannot be read as United States levels. The scheme is public, which, for a classification scheme, is a pleasant surprise. No colors: neutral.
 
+The NATO SECRET classification on macOS 26, top and bottom banners and SystemBanner Settings:
+
+![Alt text](Docs/Images/MacOS_NATO_Secret.png?raw=true)
+
 Windows XP, DIFFUSION RESTREINTE (France), with a top and a bottom banner:
 
 ![Alt text](Docs/Images/XP_FrenchClassification.png?raw=true)
@@ -415,7 +421,12 @@ Windows 2000, NATO SECRET, white on red:
 ROADMAP
 -------
 
-- **Microsoft Office add-in.** Mark documents with the classification directly, for example in their header and footer, from the same settings as the banner.
+- **Microsoft Office add-in**, in a separate repository: mark documents with the classification directly, for example in their header and footer, from the same settings as the banner (the `Simple` value and its classification systems). Aimed at Office 2000 to 2010, like the Windows versions of this fork.
+- **Mac OS X 10.5 Leopard, on Intel and PowerPC Macs (G4, G5)**, built with the tools of the time (Xcode 3), like the Windows 2000 version is built for .NET 2.0.
+- **32 bit Intel Macs** (the 2006 Core Duo models), which today's Xcode cannot build for, with the same period tools.
+- **Automatic builds** of the Mac versions on GitHub, to catch at once a change that would break Mac OS X 10.6.
+
+Done recently: the classification systems of France, Germany, the United Kingdom, NATO and the United Nations, on every Windows and Mac version, and the Mac windows kept out from under the banners.
 
 -------
 CREDITS
